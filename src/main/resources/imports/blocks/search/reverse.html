@@ -1,0 +1,42 @@
+<meta property="blocks:title" content="$MESSAGES.blocks.imports.search.reverseBlockTitle">
+<meta property="blocks:description" content="$MESSAGES.blocks.imports.search.reverseBlockDescription">
+<meta property="blocks:icon" content="fa-search">
+<meta property="blocks:controller" content="com.beligum.blocks.imports.search.ReverseController">
+
+## PUBLIC STYLES
+<link rel="stylesheet" href="/assets/styles/imports/blocks-search/reverse.less">
+
+## ADMIN SCRIPTS
+<script src="/assets/scripts/imports/blocks-search/reverse.js" type="application/javascript" data-scope-role="admin"></script>
+
+<template>
+    <h4>
+        $MESSAGES.mot.imports.search.searchReverseTitle
+    </h4>
+    <div>
+    ## Note: default format is the list
+        #if (!$CONTROLLER.searchRequest.format || $CONTROLLER.searchRequest.format==$CONSTANTS.blocks.core.SEARCH_RESULTS_FORMAT_LIST)
+
+            #if(!$CONTROLLER.searchResult.results || $CONTROLLER.searchResult.results.empty)
+                <span class="empty">$MESSAGES.blocks.imports.search.boxResultsEmpty</span>
+            #else
+                <ul>
+                    #foreach($result in $CONTROLLER.searchResult.results)
+                        <li>
+                            <a href="$result.id">
+                                $!result.getTitle()
+                            </a>
+                        </li>
+                    #end
+                </ul>
+            #end
+
+        #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.core.SEARCH_RESULTS_FORMAT_LETTERS)
+            #parse('/templates/search/results/letters.html')
+        #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.core.SEARCH_RESULTS_FORMAT_IMAGES)
+            #parse('/templates/search/results/images.html')
+        #else
+            $TOOLKIT.display.message($MESSAGES.blocks.core.resultsFormatUnknown, $CONTROLLER.searchRequest.format)
+        #end
+    </div>
+</template>

@@ -1,0 +1,22 @@
+//-----IMPORTS-----
+@import (reference) "/assets/styles/imports/blocks-search/results.less";
+
+//-----STYLES-----
+blocks-search-reverse {
+
+  //inherit all properties from results
+  &:extend(blocks-search-results all);
+
+  //little trick to also inherit the image argument selector
+  @imageFormatSelect: ~'[@{SEARCH_RESULTS_FORMAT_ARG}="@{SEARCH_RESULTS_FORMAT_IMAGES}"]';
+  &@{imageFormatSelect} {
+    &:extend(blocks-search-results@{imageFormatSelect} all);
+  }
+
+  //fixes the look and feel of the default list
+  ul {
+    list-style: none;
+    //fix the default of 40px
+    padding-left: 0px;
+  }
+}
