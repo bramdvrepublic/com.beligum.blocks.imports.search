@@ -1,0 +1,25 @@
+<meta property="blocks:title" content="$MESSAGES.blocks.imports.search.resultsBlockTitle">
+<meta property="blocks:description" content="$MESSAGES.blocks.imports.search.resultsBlockDescription">
+<meta property="blocks:icon" content="fa-search">
+<meta property="blocks:controller" content="com.beligum.blocks.imports.search.Controller">
+
+## PUBLIC STYLES
+<link rel="stylesheet" href="/assets/styles/imports/blocks-search/results.less">
+
+## ADMIN SCRIPTS
+<script src="/assets/scripts/imports/blocks-search/results.js" type="application/javascript" data-scope-role="admin"></script>
+
+<template>
+    ## Note: default format is the list
+    #if (!$CONTROLLER.searchRequest.format)
+        #parse('/templates/search/results/list.html')
+    #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_LIST)
+        #parse('/templates/search/results/list.html')
+    #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_LETTERS)
+        #parse('/templates/search/results/letters.html')
+    #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_IMAGES)
+        #parse('/templates/search/results/images.html')
+    #else
+        $TOOLKIT.display.message($MESSAGES.blocks.imports.search.resultsFormatUnknown, $CONTROLLER.searchRequest.format)
+    #end
+</template>

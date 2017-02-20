@@ -1,0 +1,45 @@
+<meta property="blocks:title" content="$MESSAGES.blocks.imports.search.boxBlockTitle">
+<meta property="blocks:description" content="$MESSAGES.blocks.imports.search.boxBlockDescription">
+<meta property="blocks:icon" content="fa-search">
+<meta property="blocks:controller" content="com.beligum.blocks.imports.search.Controller">
+
+## PUBLIC STYLES
+<link rel="stylesheet" href="/assets/styles/imports/blocks-search/box.less">
+
+## ADMIN SCRIPTS
+<script src="/constants/blocks/imports/search?type=js" type="application/javascript" data-scope-role="admin"></script>
+<script src="/messages/blocks/imports/search?type=js" type="application/javascript" data-scope-role="admin"></script>
+<script src="/assets/scripts/imports/blocks-search/box.js" type="application/javascript" data-scope-role="admin"></script>
+
+## sync with constant SEARCH_BOX_TYPE_ARG
+<template data-search-type="">
+
+    <div class="panel panel-default panel-search">
+        <div class="panel-heading">
+            <h3 class="panel-title">
+                #if(!$CONTROLLER.searchRequest.typeOf)
+                    $MESSAGES.blocks.imports.search.boxTitle
+                #else
+                    $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxTitleWithType, $CONTROLLER.searchRequest.typeOf.label)
+                #end
+            </h3>
+        </div>
+        <div class="panel-body">
+            <form METHOD="get">
+                <div class="form-inline">
+                    <div class="form-group">
+                        <input type="text" class="form-control" name="$CONSTANTS.blocks.imports.search.SEARCH_PARAM_QUERY" placeholder="$MESSAGES.blocks.imports.search.boxInputPlaceholder" value="$!CONTROLLER.searchRequest.searchTerm">
+                    </div>
+                </div>
+                <hr>
+                <div class="form-inline search-options">
+                    <div class="form-group">
+                        <button type="reset" class="btn btn-default pull-right">$MESSAGES.blocks.imports.search.boxButtonReset</button>
+                        <button type="submit" class="btn btn-primary pull-right">$MESSAGES.blocks.imports.search.boxButtonSearch</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</template>
