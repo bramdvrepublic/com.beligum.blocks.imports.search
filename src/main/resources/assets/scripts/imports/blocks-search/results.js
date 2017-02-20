@@ -1,7 +1,7 @@
 /**
  * Created by wouter on 25/08/15.
  */
-base.plugin("mot.blocks.results", ["base.core.Class", "blocks.imports.Block", "blocks.core.Sidebar", "constants.blocks.imports.search", "messages.blocks.imports.search", function (Class, Block, Sidebar, SearchConstants, SearchMessages)
+base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.Block", "blocks.core.Sidebar", "constants.blocks.imports.search", "messages.blocks.imports.search", function (Class, Block, Sidebar, SearchConstants, SearchMessages)
 {
     var SearchResults = this;
     var TAGS = ["blocks-search-results"];

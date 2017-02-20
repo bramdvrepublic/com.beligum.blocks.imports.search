@@ -1,7 +1,7 @@
 /**
  * Created by wouter on 25/08/15.
  */
-base.plugin("mot.blocks.search", ["base.core.Class", "blocks.imports.Block", "blocks.core.Sidebar", "constants.blocks.imports.search", "messages.blocks.imports.search", function (Class, Block, Sidebar, SearchConstants, SearchMessages)
+base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Block", "blocks.core.Sidebar", "constants.blocks.imports.search", "messages.blocks.imports.search", function (Class, Block, Sidebar, SearchConstants, SearchMessages)
 {
     var SearchBox = this;
     var TAGS = ["blocks-search-box"];
