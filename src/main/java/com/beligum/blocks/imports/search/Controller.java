@@ -13,7 +13,6 @@ import com.beligum.blocks.filesystem.index.ifaces.LuceneQueryConnection;
 import com.beligum.blocks.rdf.ifaces.RdfClass;
 import com.beligum.blocks.rdf.ifaces.RdfProperty;
 import com.beligum.blocks.templating.blocks.DefaultTemplateController;
-import gen.com.beligum.blocks.core.constants.blocks.core;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause;
@@ -26,7 +25,7 @@ import java.util.*;
 
 import static com.beligum.blocks.imports.search.Controller.CacheKeys.SEARCH_REQUEST;
 import static com.beligum.blocks.imports.search.Controller.CacheKeys.SEARCH_RESULT;
-import static gen.com.beligum.blocks.core.constants.blocks.core.SEARCH_RESULTS_FORMAT_LIST;
+import static gen.com.beligum.blocks.imports.search.constants.blocks.imports.search.*;
 
 /**
  * Created by bram on 6/6/16.
@@ -53,18 +52,18 @@ public class Controller extends DefaultTemplateController
         IndexSearchRequest searchRequest = this.getSearchRequest();
 
         if (searchRequest.getSearchTerm() == null) {
-            searchRequest.setSearchTerm(getQueryParam(core.SEARCH_PARAM_QUERY));
+            searchRequest.setSearchTerm(getQueryParam(SEARCH_PARAM_QUERY));
         }
 
         if (searchRequest.getFieldFilters() == null) {
-            searchRequest.setFieldFilters(getQueryParams(core.SEARCH_PARAM_FILTERS));
+            searchRequest.setFieldFilters(getQueryParams(SEARCH_PARAM_FILTERS));
         }
 
         if (searchRequest.getTypeOf() == null) {
             RdfClass typeOf = null;
             String typeOfParam = null;
             try {
-                typeOfParam = this.getParam(core.SEARCH_PARAM_TYPE, core.SEARCH_BOX_TYPE_ARG, null);
+                typeOfParam = this.getParam(SEARCH_PARAM_TYPE, SEARCH_BOX_TYPE_ARG, null);
                 if (!StringUtils.isEmpty(typeOfParam)) {
                     typeOf = RdfFactory.getClassForResourceType(URI.create(typeOfParam));
                 }
@@ -78,7 +77,7 @@ public class Controller extends DefaultTemplateController
 
         if (searchRequest.getSortField() == null) {
             RdfProperty sortField = null;
-            String sortParam = getQueryParam(core.SEARCH_PARAM_SORT);
+            String sortParam = getQueryParam(SEARCH_PARAM_SORT);
             if (!StringUtils.isEmpty(sortParam)) {
                 sortField = (RdfProperty) RdfFactory.getForResourceType(URI.create(sortParam));
             }
@@ -90,7 +89,7 @@ public class Controller extends DefaultTemplateController
             Integer pageIndex = null;
             String pageIndexParam = null;
             try {
-                pageIndexParam = this.getParam(core.SEARCH_PARAM_INDEX, core.SEARCH_RESULTS_INDEX_ARG, null);
+                pageIndexParam = this.getParam(SEARCH_PARAM_INDEX, SEARCH_RESULTS_INDEX_ARG, null);
                 if (!StringUtils.isEmpty(pageIndexParam)) {
                     pageIndex = Math.max(Integer.parseInt(pageIndexParam), FIRST_PAGE_INDEX);
                 }
@@ -106,7 +105,7 @@ public class Controller extends DefaultTemplateController
             Integer pageSize = null;
             String pageSizeParam = null;
             try {
-                pageSizeParam = this.getParam(core.SEARCH_PARAM_SIZE, core.SEARCH_RESULTS_SIZE_ARG, null);
+                pageSizeParam = this.getParam(SEARCH_PARAM_SIZE, SEARCH_RESULTS_SIZE_ARG, null);
                 if (!StringUtils.isEmpty(pageSizeParam)) {
                     pageSize = Math.min(Integer.parseInt(pageSizeParam), MAX_PAGE_SIZE);
                 }
@@ -120,7 +119,7 @@ public class Controller extends DefaultTemplateController
 
         if (searchRequest.getFormat() == null) {
             String format = null;
-            String resultsFormatConfig = this.config.get(core.SEARCH_RESULTS_FORMAT_ARG);
+            String resultsFormatConfig = this.config.get(SEARCH_RESULTS_FORMAT_ARG);
             if (!StringUtils.isEmpty(resultsFormatConfig)) {
                 format = resultsFormatConfig;
             }
@@ -235,7 +234,7 @@ public class Controller extends DefaultTemplateController
         if (filters != null) {
             for (String filter : filters) {
                 if (StringUtils.isEmpty(filter)) {
-                    String[] keyVal = filter.split(core.SEARCH_PARAM_DELIM);
+                    String[] keyVal = filter.split(SEARCH_PARAM_DELIM);
 
                     if (keyVal.length == 2) {
                         RdfProperty key = (RdfProperty) RdfFactory.getForResourceType(URI.create(keyVal[0]));

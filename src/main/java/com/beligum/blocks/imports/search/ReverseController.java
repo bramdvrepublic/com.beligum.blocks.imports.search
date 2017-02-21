@@ -19,7 +19,7 @@ import java.util.Locale;
 
 import static com.beligum.blocks.imports.search.ReverseController.CacheKeys.MOT_SEARCH_REVERSE_REQUEST;
 import static com.beligum.blocks.imports.search.ReverseController.CacheKeys.MOT_SEARCH_REVERSE_RESULT;
-import static gen.com.beligum.blocks.core.constants.blocks.core.SEARCH_RESULTS_FORMAT_LIST;
+import static gen.com.beligum.blocks.imports.search.constants.blocks.imports.search.SEARCH_RESULTS_FORMAT_LIST;
 
 /**
  * Created by wouter on 14/09/15.
