@@ -83,6 +83,28 @@
         #end
     #end
 
+## the last page (this is a double of the one below to activate in xs mode because the order is reversed because of float right)
+    #if($CONTROLLER.searchResult.totalHits > $lastIndex)
+        #set($link=$REQUEST.getUriInfo().getRequestUriBuilder().replaceQueryParam($CONSTANTS.blocks.imports.search.SEARCH_PARAM_INDEX, $maxPageInt))
+        <li class="last last-float"><a href="$link">
+            #if($useIcons)
+                <i class="fa fa-angle-double-right"></i>
+            #{else}
+                $MESSAGES.blocks.imports.search.boxResultLast <i class="fa fa-angle-double-right"></i>
+            #end
+        </a></li>
+    #else
+        #if($disableNotHide)
+            <li class="last last-float disabled"><a>
+                #if($useIcons)
+                    <i class="fa fa-angle-double-right"></i>
+                #{else}
+                    $MESSAGES.blocks.imports.search.boxResultLast <i class="fa fa-angle-double-right"></i>
+                #end
+            </a></li>
+        #end
+    #end
+
 ## the next page
     #if($CONTROLLER.searchResult.totalHits > $lastIndex)
         #set($index=$CONTROLLER.searchResult.pageIndex + 1)

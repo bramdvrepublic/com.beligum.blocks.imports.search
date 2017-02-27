@@ -111,6 +111,27 @@ blocks-search-results {
       }
 
       .pagination {
+
+        //pull open the pagination so we can align right
+        width: 100%;
+
+        a {
+          //hide the page-buttons in XS mode
+          display: none;
+          @media (min-width: @screen-sm-min) {
+            display: inline;
+          }
+        }
+
+        .first a,
+        .previous a,
+        .next a,
+        .last a {
+          //we always show the main controls, no matter what
+          //and switch to inline-block to support floats
+          display: inline-block;
+        }
+
         @bigOffset: 5px;
         @smallOffset: 5px;
         .first a {
@@ -125,6 +146,34 @@ blocks-search-results {
         .last a {
           margin-left: @bigOffset;
         }
+
+        //The main idea here is to align the next and last button to the right
+        //of the container in XS mode and omit all individual numbers in between
+        .last {
+          display: none;
+        }
+        .last-float {
+          display: inline;
+        }
+        .next a,
+        .last a,
+        .last-float a {
+          float: right;
+        }
+        @media (min-width: @screen-sm-min) {
+          .last {
+            display: inline;
+          }
+          .last-float {
+            display: none;
+          }
+          .next a,
+          .last a,
+          .last-float a {
+            float: left;
+          }
+        }
+
       }
     }
   }
