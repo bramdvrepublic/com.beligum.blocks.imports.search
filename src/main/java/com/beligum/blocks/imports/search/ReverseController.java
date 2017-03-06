@@ -17,8 +17,8 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import static com.beligum.blocks.imports.search.ReverseController.CacheKeys.MOT_SEARCH_REVERSE_REQUEST;
-import static com.beligum.blocks.imports.search.ReverseController.CacheKeys.MOT_SEARCH_REVERSE_RESULT;
+import static com.beligum.blocks.imports.search.ReverseController.CacheKeys.SEARCH_REVERSE_REQUEST;
+import static com.beligum.blocks.imports.search.ReverseController.CacheKeys.SEARCH_REVERSE_RESULT;
 import static gen.com.beligum.blocks.imports.search.constants.blocks.imports.search.SEARCH_RESULTS_FORMAT_LIST;
 
 /**
@@ -29,8 +29,8 @@ public class ReverseController extends Controller
     //-----CONSTANTS-----
     public enum CacheKeys implements CacheKey
     {
-        MOT_SEARCH_REVERSE_REQUEST,
-        MOT_SEARCH_REVERSE_RESULT,
+        SEARCH_REVERSE_REQUEST,
+        SEARCH_REVERSE_RESULT,
     }
 
     //-----VARIABLES-----
@@ -41,16 +41,16 @@ public class ReverseController extends Controller
     @Override
     public IndexSearchRequest getSearchRequest()
     {
-        if (!R.cacheManager().getRequestCache().containsKey(MOT_SEARCH_REVERSE_REQUEST)) {
-            R.cacheManager().getRequestCache().put(MOT_SEARCH_REVERSE_REQUEST, new IndexSearchRequest());
+        if (!R.cacheManager().getRequestCache().containsKey(SEARCH_REVERSE_REQUEST)) {
+            R.cacheManager().getRequestCache().put(SEARCH_REVERSE_REQUEST, new IndexSearchRequest());
         }
 
-        return (IndexSearchRequest) R.cacheManager().getRequestCache().get(MOT_SEARCH_REVERSE_REQUEST);
+        return (IndexSearchRequest) R.cacheManager().getRequestCache().get(SEARCH_REVERSE_REQUEST);
     }
     @Override
     public IndexSearchResult getSearchResult()
     {
-        if (!R.cacheManager().getRequestCache().containsKey(MOT_SEARCH_REVERSE_RESULT)) {
+        if (!R.cacheManager().getRequestCache().containsKey(SEARCH_REVERSE_RESULT)) {
             try {
                 IndexSearchRequest searchRequest = this.getSearchRequest();
 
@@ -88,14 +88,14 @@ public class ReverseController extends Controller
                     searchResult = StorageFactory.getMainPageQueryConnection().search(pageQuery, null, false, searchRequest.getPageSize(), searchRequest.getPageIndex());
                 }
 
-                R.cacheManager().getRequestCache().put(MOT_SEARCH_REVERSE_RESULT, searchResult);
+                R.cacheManager().getRequestCache().put(SEARCH_REVERSE_RESULT, searchResult);
             }
             catch (Exception e) {
                 Logger.error("Error while executing reverse search query", e);
             }
         }
 
-        return (IndexSearchResult) R.cacheManager().getRequestCache().get(MOT_SEARCH_REVERSE_RESULT);
+        return (IndexSearchResult) R.cacheManager().getRequestCache().get(SEARCH_REVERSE_RESULT);
     }
 
     //-----PROTECTED METHODS-----
