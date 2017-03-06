@@ -17,7 +17,7 @@
     </h4>
     <div>
     ## Note: default format is the list
-        #if (!$CONTROLLER.searchRequest.format || $CONTROLLER.searchRequest.format==$CONSTANTS.blocks.core.SEARCH_RESULTS_FORMAT_LIST)
+        #if (!$CONTROLLER.searchRequest.format || $CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_LIST)
 
             #if(!$CONTROLLER.searchResult.results || $CONTROLLER.searchResult.results.empty)
                 <span class="empty">$MESSAGES.blocks.imports.search.boxResultsEmpty</span>
@@ -33,12 +33,12 @@
                 </ul>
             #end
 
-        #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.core.SEARCH_RESULTS_FORMAT_LETTERS)
+        #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_LETTERS)
             #parse('/templates/search/results/letters.html')
-        #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.core.SEARCH_RESULTS_FORMAT_IMAGES)
+        #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_IMAGES)
             #parse('/templates/search/results/images.html')
         #else
-            $TOOLKIT.display.message($MESSAGES.blocks.core.resultsFormatUnknown, $CONTROLLER.searchRequest.format)
+            $TOOLKIT.display.message($MESSAGES.blocks.imports.search.resultsFormatUnknown, $CONTROLLER.searchRequest.format)
         #end
     </div>
 </template>
