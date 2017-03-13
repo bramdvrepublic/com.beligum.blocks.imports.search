@@ -1,7 +1,7 @@
 /**
  * Created by wouter on 25/08/15.
  */
-base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.Block", "blocks.core.Sidebar", "constants.blocks.imports.search", "messages.blocks.imports.search", function (Class, Block, Sidebar, SearchConstants, SearchMessages)
+base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.Block", "blocks.core.Sidebar", "constants.blocks.core", "messages.blocks.core", "constants.blocks.imports.search", "messages.blocks.imports.search", function (Class, Block, Sidebar, BlocksConstants, BlocksMessages, SearchConstants, SearchMessages)
 {
     var SearchResults = this;
     var TAGS = ["blocks-search-results"];
@@ -32,9 +32,100 @@ base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.
         {
             var retVal = SearchResults.Class.Super.prototype.getConfigs.call(this, block, element);
 
-            retVal.push(this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.boxType, SearchConstants.SEARCH_BOX_TYPE_ARG, SearchConstants.SEARCH_CLASSES_ENDPOINT, "title", "curieName"));
+            var sortPropComboAttr = SearchConstants.SEARCH_BOX_SORT_PARAM_ARG;
+            var sortPropComboInit = function changeListener(testValue)
+            {
+                var retVal = false;
 
-            //retVal.push(this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.boxType, SearchConstants.SEARCH_BOX_TYPE_ARG, "/blocks/imports/search/values/", "title", "curieName"));
+                //make sure we don't set the attribute to "undefined"
+                if (typeof testValue !== typeof undefined) {
+                    retVal = block.element.attr(sortPropComboAttr) == testValue;
+                }
+
+                //return true if this element needs to be selected
+                return retVal;
+            };
+            var sortPropComboChanged = function changeListener(oldValueTerm, newValueTerm)
+            {
+                block.element.removeAttr(sortPropComboAttr);
+
+                if (newValueTerm) {
+                    block.element.attr(sortPropComboAttr, newValueTerm);
+                }
+            };
+
+            //we'll init it here to have a pointer in the subject changeListener below
+            //note: don't add the changeListener yet, or it will overwrite a valid attribute during initialization
+            var sortPropCombo = this.addUniqueAttributeValue(Sidebar, block.element, SearchMessages.resultsSortSubjectTitle, sortPropComboAttr, [], null);
+
+            var _this = this;
+            var nameProperty = 'title';
+            var valueProperty = 'curieName';
+            var searchClassCombo = this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.resultsSubjectTitle, SearchConstants.SEARCH_BOX_TYPE_ARG, SearchConstants.SEARCH_CLASSES_ENDPOINT, nameProperty, valueProperty,
+                function changeListener(oldValueTerm, newValueTerm)
+                {
+                    //Call the change listener manually to reset the sub-property if the class changes,
+                    //except during initialization because otherwise, it would wipe the valid saved attribute
+                    //Note that 'firstCall' is just a custom property we set to detect initialization, it has no meaning
+                    if (!searchClassCombo.firstCall) {
+                        searchClassCombo.firstCall = true;
+                    }
+                    else {
+                        sortPropComboChanged(null, null);
+                    }
+
+                    //You can use this code to disable to dropdown if you ever would need this
+                    //sortPropCombo.find('.dropdown-toggle').addClass("disabled");
+
+                    var valuesEndpoint = BlocksConstants.RDF_PROPERTIES_ENDPOINT;
+
+                    //if we have a specific class, we'll only show the properties of that class,
+                    //otherwise we show all properties
+                    if (newValueTerm && newValueTerm.curieName) {
+                        valuesEndpoint += "?" + BlocksConstants.RDF_RES_TYPE_CURIE_PARAM + "=" + newValueTerm.curieName;
+                    }
+
+                    $.getJSON(valuesEndpoint)
+                        .done(function (data)
+                        {
+                            var comboEntries = [];
+                            $.each(data, function (idx, entry)
+                            {
+                                comboEntries.push({
+                                    name: entry[nameProperty],
+                                    //note: null values aren't handled very well, force-switch to empty string
+                                    value: entry[valueProperty] === null ? '' : entry[valueProperty]
+                                });
+                            });
+
+                            _this.sortComboEntries(comboEntries);
+
+                            _this.reinitCombobox(sortPropCombo, comboEntries, sortPropComboInit, sortPropComboChanged);
+                        })
+                        .fail(function (xhr, textStatus, exception)
+                        {
+                            Notification.error(BlocksMessages.generalServerDataError + (exception ? "; " + exception : ""), xhr);
+                        });
+                }
+            );
+
+            retVal.push(searchClassCombo);
+            retVal.push(sortPropCombo);
+
+            retVal.push(this.addUniqueAttributeValue(Sidebar, block.element, SearchMessages.resultsSortOrderTitle, SearchConstants.SEARCH_BOX_SORT_DESC_ARG,
+                [
+                    {
+                        name: SearchMessages.resultsSortOrderAsc,
+                        value: ''
+                    },
+                    {
+                        name: SearchMessages.resultsSortOrderDesc,
+                        value: 'true'
+                    },
+                ]
+            ));
+
+            //retVal.push(this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.resultsSubjectTitle, SearchConstants.SEARCH_BOX_TYPE_ARG, "/blocks/imports/search/values/", "title", "curieName"));
 
             retVal.push(this.addUniqueAttributeValue(Sidebar, block.element, SearchMessages.boxResultsFormat, SearchConstants.SEARCH_RESULTS_FORMAT_ARG,
                 [

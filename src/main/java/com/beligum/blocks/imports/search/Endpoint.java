@@ -12,7 +12,6 @@ import com.beligum.blocks.rdf.ifaces.RdfProperty;
 import com.beligum.blocks.rdf.ontology.factories.Classes;
 import com.beligum.blocks.rdf.ontology.factories.Terms;
 import com.beligum.blocks.rdf.ontology.vocabularies.XSD;
-import com.beligum.blocks.security.Permissions;
 import org.apache.shiro.authz.annotation.RequiresRoles;
 import org.openrdf.query.BindingSet;
 import org.openrdf.query.TupleQuery;
@@ -33,13 +32,14 @@ import java.util.TreeSet;
 
 import static com.beligum.blocks.filesystem.index.SesamePageIndexerConnection.SPARQL_OBJECT_BINDING_NAME;
 import static com.beligum.blocks.filesystem.index.SesamePageIndexerConnection.SPARQL_SUBJECT_BINDING_NAME;
+import static gen.com.beligum.base.core.constants.base.core.ADMIN_ROLE_NAME;
 import static gen.com.beligum.blocks.core.constants.blocks.core.RDF_RES_TYPE_CURIE_PARAM;
 
 /**
  * Created by bram on 27/02/17.
  */
 @Path("/blocks/imports/search")
-@RequiresRoles(Permissions.ADMIN_ROLE_NAME)
+@RequiresRoles(ADMIN_ROLE_NAME)
 public class Endpoint
 {
     //-----CONSTANTS-----

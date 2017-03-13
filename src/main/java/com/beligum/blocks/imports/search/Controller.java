@@ -77,12 +77,19 @@ public class Controller extends DefaultTemplateController
 
         if (searchRequest.getSortField() == null) {
             RdfProperty sortField = null;
-            String sortParam = getQueryParam(SEARCH_PARAM_SORT);
+            String sortParam = this.getParam(SEARCH_PARAM_SORT, SEARCH_BOX_SORT_PARAM_ARG, null);
             if (!StringUtils.isEmpty(sortParam)) {
                 sortField = (RdfProperty) RdfFactory.getForResourceType(URI.create(sortParam));
             }
 
             searchRequest.setSortField(sortField);
+        }
+
+        if (searchRequest.getSortDescending() == null) {
+            String descParam = this.getParam(SEARCH_PARAM_SORT_DESC, SEARCH_BOX_SORT_DESC_ARG, null);
+            if (!StringUtils.isEmpty(descParam)) {
+                searchRequest.setSortDescending(Boolean.valueOf(descParam));
+            }
         }
 
         if (searchRequest.getPageIndex() == null) {
@@ -153,6 +160,9 @@ public class Controller extends DefaultTemplateController
                 Locale locale = R.i18n().getOptimalLocale();
 
                 //set some defaults if still empty..
+                if (searchRequest.getSortDescending() == null) {
+                    searchRequest.setSortDescending(false);
+                }
                 if (searchRequest.getPageIndex() == null) {
                     searchRequest.setPageIndex(FIRST_PAGE_INDEX);
                 }
@@ -180,7 +190,7 @@ public class Controller extends DefaultTemplateController
                 }
 
                 //this.searchResult = StorageFactory.getTriplestoreQueryConnection().search(rdfClass, searchTerm, new HashMap<RdfProperty, String>(), sortField, false, RESOURCES_ON_PAGE, selectedPage, R.i18n().getOptimalLocale());
-                searchResult = queryConnection.search(pageQuery, searchRequest.getSortField(), false, searchRequest.getPageSize(), searchRequest.getPageIndex());
+                searchResult = queryConnection.search(pageQuery, searchRequest.getSortField(), searchRequest.getSortDescending(), searchRequest.getPageSize(), searchRequest.getPageIndex());
             }
             catch (Exception e) {
                 Logger.error("Error while executing search query", e);
