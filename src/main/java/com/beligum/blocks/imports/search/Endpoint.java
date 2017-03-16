@@ -54,7 +54,7 @@ public class Endpoint
     @Produces(MediaType.APPLICATION_JSON)
     public Response getClasses() throws IOException
     {
-        Set<RdfClass> retVal = RdfFactory.getClasses();
+        Set<RdfClass> retVal = RdfFactory.getLocalPublicClasses();
         retVal.add(RdfEndpoint.ALL_CLASSES);
         return Response.ok(retVal).build();
     }

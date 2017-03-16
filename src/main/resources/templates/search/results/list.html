@@ -7,7 +7,7 @@
             #set($lastIndex = $CONTROLLER.searchResult.totalHits)
         #end
         $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDescription, $firstIndex, $lastIndex) <span
-            class="total-hits">$CONTROLLER.searchResult.totalHits $MESSAGES.blocks.core.boxResultsTitle $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDuration, $CONTROLLER.searchResult.searchDurationSeconds)</span>
+            class="total-hits">$TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsTitle, $CONTROLLER.searchResult.totalHits) $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDuration, $CONTROLLER.searchResult.searchDurationSeconds)</span>
     </div>
     <div class="panel-body">
         #set($maxPageFloat = $CONTROLLER.searchResult.totalHits / $CONTROLLER.searchResult.pageSize)

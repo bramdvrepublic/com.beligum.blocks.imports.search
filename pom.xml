@@ -27,7 +27,13 @@
       <dependency>
           <groupId>com.beligum.blocks</groupId>
           <artifactId>blocks-core</artifactId>
-          <version>0.3.6</version>
+          <version>0.3.7-SNAPSHOT</version>
+      </dependency>
+
+      <dependency>
+          <groupId>org.webjars.bower</groupId>
+          <artifactId>github-com-RubaXa-Sortable</artifactId>
+          <version>1.4.2</version>
       </dependency>
 
   </dependencies>
