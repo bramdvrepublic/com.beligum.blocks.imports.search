@@ -43,19 +43,16 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
             var _this = this;
             this.block = block;
             this.addFilterCombo = this.createCombobox(Sidebar, SearchMessages.boxFiltersPropertiesAdd, []);
-            this.activeFiltersList = this.createActiveFilters();
+            this.activeFiltersList = this.createListGroup(SearchMessages.boxFiltersPropertiesActive, true, this.filtersListReordered);
             this.searchClassCombo = this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.boxFiltersClassLabel, SearchConstants.SEARCH_BOX_TYPE_ARG, SearchConstants.SEARCH_CLASSES_ENDPOINT, 'title', 'curieName',
                 function changeListener(oldValueTerm, newValueTerm)
                 {
-                    var force = true;
-
-                    //we don't force a reload of the filters when the class didn't change
-                    var attr = _this.block.element.attr(SearchConstants.SEARCH_BOX_TYPE_ARG);
-                    if (newValueTerm && newValueTerm.curieName && newValueTerm.curieName === attr) {
-                        force = false;
+                    //reset the filters if we explicitly changed the class to something else (so not during initialization)
+                    if (oldValueTerm && oldValueTerm.curieName && newValueTerm && newValueTerm.curieName && newValueTerm.curieName !== oldValueTerm.curieName) {
+                        _this.resetActiveFilters();
                     }
 
-                    _this.reinitAddFilterCombo(force);
+                    _this.reinitAddFilterCombo();
                 }
             );
 
@@ -79,41 +76,14 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
         },
 
         //-----PRIVATE METHODS-----
-        createActiveFilters: function ()
-        {
-            var content = $('<div class="' + BlocksConstants.INPUT_TYPE_WRAPPER_CLASS + '"/>');
-            var id = Commons.generateId();
-            var label = $('<label for="' + id + '">' + SearchMessages.boxFiltersPropertiesActive + '</label>').appendTo(content);
-            var listGroup = $('<div id="' + id + '" class="list-group"/>').appendTo(content);
-
-            if (Sortable) {
-                Sortable.create(listGroup.get(0), {
-                    //works nicer when the whole line is draggable, but works
-                    //handle: ".handle",
-                    animation: 250,
-                    //this will create an empty space where we will drop
-                    ghostClass: 'invisible',
-                    onUpdate: $.proxy(this.filtersListReordered, this)
-                });
-            }
-            if (jQuery().perfectScrollbar) {
-                listGroup.perfectScrollbar();
-            }
-
-            return content;
-        },
-        reinitAddFilterCombo: function (forceReload)
+        reinitAddFilterCombo: function ()
         {
             var _this = this;
 
             var searchClassCurie = this.block.element.attr(SearchConstants.SEARCH_BOX_TYPE_ARG);
             if (searchClassCurie) {
+                //make sure we start out visible
                 _this.addFilterCombo.removeClass('hidden');
-
-                //this will make sure the filter list is not updated, but wiped
-                if (forceReload) {
-                    this.resetActiveFilters();
-                }
 
                 $.getJSON(BlocksConstants.RDF_PROPERTIES_ENDPOINT + "?" + BlocksConstants.RDF_RES_TYPE_CURIE_PARAM + "=" + searchClassCurie)
                     .done(function (data)
@@ -122,6 +92,10 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
                         var activeFiltersAttr = _this.block.element.attr(SearchConstants.SEARCH_BOX_FILTER_TERMS_ARG);
                         if (activeFiltersAttr) {
                             activeFilters = JSON.parse(atob(activeFiltersAttr));
+                        }
+
+                        if (!activeFilters.length) {
+                            _this.resetActiveFilters();
                         }
 
                         var allClassProps = [];
@@ -181,10 +155,7 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
             else {
                 _this.addFilterCombo.addClass('hidden');
                 _this.reinitCombobox(_this.addFilterCombo, []);
-                //already reset when forced
-                if (!forceReload) {
-                    _this.resetActiveFilters();
-                }
+                _this.resetActiveFilters();
             }
         },
         filterComboInit: function (testValue)
@@ -246,6 +217,9 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
             if (jQuery().perfectScrollbar) {
                 listGroup.perfectScrollbar('update');
             }
+
+            //scroll to bottom (needed to make the update visible when clipped)
+            listGroup.scrollTop(listGroup[0].scrollHeight);
 
             //make sure the list is visible
             this.activeFiltersList.removeClass('hidden');
