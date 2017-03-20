@@ -32,7 +32,7 @@ base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.
         {
             var retVal = SearchResults.Class.Super.prototype.getConfigs.call(this, block, element);
 
-            var sortPropComboAttr = SearchConstants.SEARCH_BOX_SORT_PARAM_ARG;
+            var sortPropComboAttr = SearchConstants.SEARCH_BOX_SORT_ARG;
             var sortPropComboInit = function changeListener(testValue)
             {
                 var retVal = false;
@@ -112,7 +112,7 @@ base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.
             retVal.push(searchClassCombo);
             retVal.push(sortPropCombo);
 
-            retVal.push(this.addUniqueAttributeValue(Sidebar, block.element, SearchMessages.resultsSortOrderTitle, SearchConstants.SEARCH_BOX_SORT_DESC_ARG,
+            retVal.push(this.addUniqueAttributeValue(Sidebar, block.element, SearchMessages.resultsSortOrderTitle, SearchConstants.SEARCH_BOX_DESC_ARG,
                 [
                     {
                         name: SearchMessages.resultsSortOrderAsc,
