@@ -3,26 +3,40 @@ package com.beligum.blocks.imports.search;
 import com.beligum.base.cache.CacheKey;
 import com.beligum.base.server.R;
 import com.beligum.base.utils.Logger;
+import com.beligum.base.utils.json.Json;
 import com.beligum.blocks.config.RdfFactory;
+import com.beligum.blocks.config.Settings;
 import com.beligum.blocks.config.StorageFactory;
 import com.beligum.blocks.filesystem.index.LucenePageIndexer;
+import com.beligum.blocks.filesystem.index.LucenePageIndexerConnection;
 import com.beligum.blocks.filesystem.index.entries.pages.IndexSearchRequest;
 import com.beligum.blocks.filesystem.index.entries.pages.IndexSearchResult;
 import com.beligum.blocks.filesystem.index.entries.pages.PageIndexEntry;
 import com.beligum.blocks.filesystem.index.ifaces.LuceneQueryConnection;
+import com.beligum.blocks.filesystem.index.ifaces.SparqlQueryConnection;
 import com.beligum.blocks.rdf.ifaces.RdfClass;
 import com.beligum.blocks.rdf.ifaces.RdfProperty;
+import com.beligum.blocks.rdf.ontology.vocabularies.RDF;
+import com.beligum.blocks.rdf.ontology.vocabularies.XSD;
 import com.beligum.blocks.templating.blocks.DefaultTemplateController;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.TermQuery;
+import org.openrdf.query.BindingSet;
+import org.openrdf.query.TupleQuery;
+import org.openrdf.query.TupleQueryResult;
+import org.openrdf.sail.lucene.LuceneSailSchema;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 
+import static com.beligum.blocks.filesystem.index.SesamePageIndexerConnection.SPARQL_OBJECT_BINDING_NAME;
+import static com.beligum.blocks.filesystem.index.SesamePageIndexerConnection.SPARQL_SUBJECT_BINDING_NAME;
 import static com.beligum.blocks.imports.search.Controller.CacheKeys.SEARCH_REQUEST;
 import static com.beligum.blocks.imports.search.Controller.CacheKeys.SEARCH_RESULT;
 import static gen.com.beligum.blocks.imports.search.constants.blocks.imports.search.*;
@@ -55,10 +69,6 @@ public class Controller extends DefaultTemplateController
             searchRequest.setSearchTerm(getQueryParam(SEARCH_PARAM_QUERY));
         }
 
-        if (searchRequest.getFieldFilters() == null) {
-            searchRequest.setFieldFilters(getQueryParams(SEARCH_PARAM_FILTERS));
-        }
-
         if (searchRequest.getTypeOf() == null) {
             RdfClass typeOf = null;
             String typeOfParam = null;
@@ -75,9 +85,13 @@ public class Controller extends DefaultTemplateController
             searchRequest.setTypeOf(typeOf);
         }
 
+        if (searchRequest.getFieldFilters() == null) {
+            searchRequest.setFieldFilters(R.requestContext().getJaxRsRequest().getUriInfo().getQueryParameters().get(SEARCH_PARAM_FILTER));
+        }
+
         if (searchRequest.getSortField() == null) {
             RdfProperty sortField = null;
-            String sortParam = this.getParam(SEARCH_PARAM_SORT, SEARCH_BOX_SORT_PARAM_ARG, null);
+            String sortParam = this.getQueryParam(SEARCH_PARAM_SORT);
             if (!StringUtils.isEmpty(sortParam)) {
                 sortField = (RdfProperty) RdfFactory.getForResourceType(URI.create(sortParam));
             }
@@ -86,7 +100,7 @@ public class Controller extends DefaultTemplateController
         }
 
         if (searchRequest.getSortDescending() == null) {
-            String descParam = this.getParam(SEARCH_PARAM_SORT_DESC, SEARCH_BOX_SORT_DESC_ARG, null);
+            String descParam = this.getQueryParam(SEARCH_PARAM_SORT_DESC);
             if (!StringUtils.isEmpty(descParam)) {
                 searchRequest.setSortDescending(Boolean.valueOf(descParam));
             }
@@ -136,6 +150,10 @@ public class Controller extends DefaultTemplateController
     }
 
     //-----PUBLIC METHODS-----
+    public SearchConfig getSearchConfig()
+    {
+        return new SearchConfig(this, this.config.containsKey(SEARCH_BOX_SORT_ARG), this.parseSearchFilters(this.config.get(SEARCH_BOX_FILTERS_ARG)));
+    }
     public IndexSearchRequest getSearchRequest()
     {
         if (!R.cacheManager().getRequestCache().containsKey(SEARCH_REQUEST)) {
@@ -183,7 +201,9 @@ public class Controller extends DefaultTemplateController
                     pageQuery.add(new TermQuery(new Term(PageIndexEntry.Field.typeOf.name(), searchRequest.getTypeOf().getCurieName().toString())), BooleanClause.Occur.FILTER);
                 }
 
-                this.addFieldFilters(searchRequest.getFieldFilters(), pageQuery, locale);
+                if (searchRequest.getFieldFilters() != null) {
+                    this.addFieldFilters(searchRequest.getFieldFilters(), pageQuery, locale);
+                }
 
                 if (!StringUtils.isEmpty(searchRequest.getSearchTerm())) {
                     pageQuery.add(queryConnection.buildWildcardQuery(null, searchRequest.getSearchTerm(), false), BooleanClause.Occur.MUST);
@@ -206,10 +226,14 @@ public class Controller extends DefaultTemplateController
     protected String getQueryParam(String name)
     {
         String retVal = null;
-        List<String> query = R.requestContext().getJaxRsRequest().getUriInfo().getQueryParameters().get(name);
-        if (query != null && query.size() > 0) {
-            retVal = query.get(0).trim();
+
+        if (!StringUtils.isEmpty(name)) {
+            List<String> query = R.requestContext().getJaxRsRequest().getUriInfo().getQueryParameters().get(name);
+            if (query != null && query.size() > 0) {
+                retVal = query.get(0).trim();
+            }
         }
+
         return retVal;
     }
     protected List<String> getQueryParams(String name)
@@ -225,7 +249,9 @@ public class Controller extends DefaultTemplateController
         //then the config value in the html
         //Note: an empty value is also a value, so don't check for empty values here
         if (retVal == null) {
-            retVal = this.config.get(configParam);
+            if (configParam != null) {
+                retVal = this.config.get(configParam);
+            }
         }
 
         if (retVal == null) {
@@ -234,17 +260,34 @@ public class Controller extends DefaultTemplateController
 
         return retVal;
     }
-    protected Map<RdfProperty, List<String>> addFieldFilters(List<String> filters, org.apache.lucene.search.BooleanQuery query, Locale locale) throws IOException
+    protected Filter[] parseSearchFilters(String base64JsonConfigAttr)
     {
-        //TODO it probably makes sense to activate this (working code!) for some cases; eg if the filter-field is a boolean with value 'false', you may want to include the entries without such a field at all too
+        Filter[] retVal = null;
+
+        if (!StringUtils.isEmpty(base64JsonConfigAttr)) {
+            try {
+                String jsonConfig = org.apache.shiro.codec.Base64.decodeToString(base64JsonConfigAttr);
+                retVal = Json.getObjectMapper().readValue(jsonConfig, Filter[].class);
+            }
+            catch (Exception e) {
+                Logger.error("Error while parsing filters config argument; " + base64JsonConfigAttr, e);
+            }
+        }
+
+        return retVal;
+    }
+    protected Map<RdfProperty, List<String>> addFieldFilters(List<String> filters, org.apache.lucene.search.BooleanQuery query, Locale locale) throws IOException, ParseException
+    {
+        //TODO it probably makes sense to activate this (working code!) for some cases;
+        // eg if the filter-field is a boolean with value 'false', you may want to include the entries without such a field at all too
         boolean includeNonExisting = false;
 
         Map<RdfProperty, List<String>> retVal = new LinkedHashMap<>();
 
         if (filters != null) {
             for (String filter : filters) {
-                if (StringUtils.isEmpty(filter)) {
-                    String[] keyVal = filter.split(SEARCH_PARAM_DELIM);
+                if (!StringUtils.isEmpty(filter)) {
+                    String[] keyVal = filter.split(SEARCH_PARAM_FILTER_DELIM);
 
                     if (keyVal.length == 2) {
                         RdfProperty key = (RdfProperty) RdfFactory.getForResourceType(URI.create(keyVal[0]));
@@ -252,6 +295,7 @@ public class Controller extends DefaultTemplateController
                             Object val = key.prepareIndexValue(keyVal[1], locale);
                             String valStr = val == null ? null : val.toString();
                             if (!StringUtils.isEmpty(valStr)) {
+                                //TODO if you want to use this: make sure you rewrite the term query first (see else())
                                 if (includeNonExisting) {
                                     //the following is the Lucene logic for: if you find a field, it should match x, but if you don't find such a field, include it as well
                                     String fieldName = key.getCurieName().toString();
@@ -268,12 +312,25 @@ public class Controller extends DefaultTemplateController
                                     query.add(subQuery, BooleanClause.Occur.FILTER);
                                 }
                                 else {
-                                    query.add(new TermQuery(new Term(key.getCurieName().toString(), valStr)), BooleanClause.Occur.FILTER);
+                                    if (key.getDataType().equals(XSD.STRING)
+                                        || key.getDataType().equals(XSD.NORMALIZED_STRING)
+                                        || key.getDataType().equals(RDF.LANGSTRING)
+                                        || key.getDataType().equals(RDF.HTML)) {
+
+                                        //TODO as long as we haven't re-indexed everything after 20/03/17 (to index strings as constants too), we have to use this for strings
+                                        //this is a text-indexed alternative to the (more exact) term query above
+                                        ComplexPhraseQueryParser queryParser = new ComplexPhraseQueryParser(key.getCurieName().toString(), LucenePageIndexer.DEFAULT_ANALYZER);
+                                        queryParser.setInOrder(true);
+                                        query.add(queryParser.parse("\"" + LucenePageIndexerConnection.removeEscapedChars(valStr, "") + "\""), BooleanClause.Occur.FILTER);
+                                    }
+                                    else {
+                                        query.add(new TermQuery(new Term(key.getCurieName().toString(), valStr)), BooleanClause.Occur.FILTER);
+                                    }
                                 }
 
                                 List<String> values = retVal.get(key);
                                 if (values == null) {
-                                    retVal.put(key, values = new ArrayList<String>());
+                                    retVal.put(key, values = new ArrayList<>());
                                 }
                                 values.add(valStr);
                             }
@@ -291,7 +348,140 @@ public class Controller extends DefaultTemplateController
 
         return retVal;
     }
+    /**
+     * Returns a list of all distinct possible values for the given filter in the current language
+     */
+    protected Set<String> searchAllFilterValues(URI resourceTypeCurie, URI resourcePropertyCurie, boolean onlyLiteral, int limit) throws IOException
+    {
+        //Note: a TreeSet will sort the strings naturally
+        Set<String> values = new TreeSet<>();
+
+        RdfClass type = RdfFactory.getClassForResourceType(resourceTypeCurie);
+        if (type == null) {
+            Logger.warn("Encountered unknown resource type; " + resourceTypeCurie);
+        }
+
+        RdfProperty property = (RdfProperty) RdfFactory.getClassForResourceType(resourcePropertyCurie);
+        if (property == null) {
+            Logger.warn("Encountered unknown resource property; " + resourcePropertyCurie);
+        }
+
+        if (type != null && property != null) {
+
+            Locale lang = R.i18n().getOptimalLocale();
+
+            StringBuilder queryBuilder = new StringBuilder();
+            final String searchPrefix = "search";
+            queryBuilder.append("PREFIX ").append(Settings.instance().getRdfOntologyPrefix()).append(": <").append(Settings.instance().getRdfOntologyUri()).append("> \n");
+            queryBuilder.append("PREFIX ").append(searchPrefix).append(": <").append(LuceneSailSchema.NAMESPACE).append("> \n");
+            queryBuilder.append("\n");
+            queryBuilder.append("SELECT DISTINCT")/*.append(" ?").append(SPARQL_SUBJECT_BINDING_NAME).append(" ?").append(SPARQL_PREDICATE_BINDING_NAME)*/.append(" ?")
+                        .append(SPARQL_OBJECT_BINDING_NAME)
+                        .append(" WHERE {\n");
+            //filter on class
+            queryBuilder.append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" a <").append(type.getFullName().toString()).append("> . \n");
+            //triple binding + filter on property
+            queryBuilder.append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getFullName().toString()).append("> ?").append(SPARQL_OBJECT_BINDING_NAME)
+                        .append(" .\n");
+
+            //filter on language if we're dealing with a literal
+            if (!property.getDataType().equals(XSD.ANY_URI)) {
+                queryBuilder.append("\tFILTER(");
+                queryBuilder.append("(lang(?").append(SPARQL_OBJECT_BINDING_NAME).append(") = \"").append(lang.getLanguage()).append("\" || lang(?").append(SPARQL_OBJECT_BINDING_NAME)
+                            .append(") = \"\")");
+                if (onlyLiteral) {
+                    queryBuilder.append(" && isLiteral(?").append(SPARQL_OBJECT_BINDING_NAME).append(")");
+                }
+                queryBuilder.append(")\n");
+            }
+
+            queryBuilder.append("}\n");
+
+            if (limit > 0) {
+                queryBuilder.append("LIMIT ").append(limit).append("\n");
+            }
+
+            SparqlQueryConnection sparqlQueryConnection = StorageFactory.getTriplestoreQueryConnection();
+            TupleQuery query = sparqlQueryConnection.query(queryBuilder.toString());
+            try (TupleQueryResult result = query.evaluate()) {
+                while (result.hasNext()) {
+                    BindingSet triple = result.next();
+                    values.add(triple.getValue(SPARQL_OBJECT_BINDING_NAME).stringValue());
+                }
+            }
+        }
+
+        return values;
+    }
 
     //-----PRIVATE METHODS-----
 
+    //-----INNER CLASSES-----
+    public static class SearchConfig
+    {
+        private Controller controller;
+        private boolean sortEnabled;
+        private Filter[] filters;
+
+        public SearchConfig(Controller controller, boolean sortEnabled, Filter[] filters)
+        {
+            this.controller = controller;
+            this.sortEnabled = sortEnabled;
+            this.filters = filters;
+        }
+        public boolean isSortEnabled()
+        {
+            return sortEnabled;
+        }
+        public Filter[] getFilters()
+        {
+            return filters;
+        }
+        public Set<String> getPossibleValuesFor(Filter filter) throws IOException
+        {
+            //TODO we might want to cache this value across requests
+            return this.controller.searchAllFilterValues(this.controller.getSearchRequest().getTypeOf().getCurieName(), filter.getProperty().getCurieName(), false, 1000);
+        }
+    }
+
+    public static class Filter
+    {
+        //-----VARIABLES-----
+        /**
+         * Note: the properties of this class should match the one in box.js - buildActiveFiltersValue()
+         */
+        private URI curieName;
+
+        //-----TRANSIENT VARIABLES-----
+        private RdfClass cachedProperty;
+
+        //-----CONSTRUCTORS-----
+        public Filter()
+        {
+        }
+
+        //-----PUBLIC GETTERS/SETTERS-----
+        public URI getCurieName()
+        {
+            return curieName;
+        }
+        //Note: this will auto-box the string value to a URI
+        public void setCurieName(URI curieName)
+        {
+            this.curieName = curieName;
+        }
+
+        //-----PUBLIC METHODS-----
+        public RdfClass getProperty()
+        {
+            if (this.cachedProperty == null) {
+                this.cachedProperty = RdfFactory.getClassForResourceType(this.curieName);
+            }
+
+            return this.cachedProperty;
+        }
+
+        //-----PRIVATE METHODS-----
+
+    }
 }

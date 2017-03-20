@@ -30,17 +30,72 @@
         </div>
         <div class="panel-body">
             <form METHOD="get">
-                <div class="form-inline">
-                    <div class="form-group">
-                        <input type="text" class="form-control" name="$CONSTANTS.blocks.imports.search.SEARCH_PARAM_QUERY" placeholder="$MESSAGES.blocks.imports.search.boxInputPlaceholder" value="$!CONTROLLER.searchRequest.searchTerm">
-                    </div>
+                <div class="form-group $CONSTANTS.blocks.imports.search.SEARCH_BOX_QUERY_CLASS">
+                    <label for="search-query">$MESSAGES.blocks.imports.search.boxInputLabel</label>
+                    <input id="search-query" type="text" class="form-control" name="$CONSTANTS.blocks.imports.search.SEARCH_PARAM_QUERY"
+                           placeholder="$MESSAGES.blocks.imports.search.boxInputPlaceholder"
+                           value="$!CONTROLLER.searchRequest.searchTerm">
                 </div>
+                #set($searchConfig=$CONTROLLER.searchConfig)
+                #if($searchConfig)
+                    #if($searchConfig.filters)
+                        #foreach($filter in $searchConfig.filters)
+                            <div class="form-group $CONSTANTS.blocks.imports.search.SEARCH_BOX_FILTER_CLASS">
+                                #set($id='search-filter-'+($foreach.index + 1))
+                                <label for="$id">$TOOLKIT.display.capitalize($filter.property.label)</label>
+                                <select id="$id" name="$CONSTANTS.blocks.imports.search.SEARCH_PARAM_FILTER" class="form-control">
+                                ## This is the empty selection
+                                    <option value=""></option>
+                                    #foreach($val in $searchConfig.getPossibleValuesFor($filter))
+                                        #set($htmlValue=$filter.curieName+'='+$val)
+                                        #set($selection='')
+                                        #if ($REQUEST.uriInfo.queryParameters.get($CONSTANTS.blocks.imports.search.SEARCH_PARAM_FILTER).contains($htmlValue))
+                                            #set($selection=' selected="selected"')
+                                        #end
+                                        <option value="$TOOLKIT.esc.html($htmlValue)"$selection>$val</option>
+                                    #end
+                                </select>
+                            </div>
+                        #end
+                    #end
+
+                    #if($searchConfig.sortEnabled)
+                        <div class="form-group $CONSTANTS.blocks.imports.search.SEARCH_BOX_SORT_CLASS">
+                            <label for="search-sort-subject">$MESSAGES.blocks.imports.search.boxSortSubjectLabel</label>
+                            <select id="search-sort-subject" name="$CONSTANTS.blocks.imports.search.SEARCH_PARAM_SORT" class="form-control">
+                            ## This is the empty selection
+                                <option value=""></option>
+                                #foreach($prop in $CONTROLLER.searchRequest.typeOf.properties)
+                                    #set($htmlValue=''+$prop.curieName)
+                                    #set($selection='')
+                                    #if ($REQUEST.uriInfo.queryParameters.get($CONSTANTS.blocks.imports.search.SEARCH_PARAM_SORT).contains($htmlValue))
+                                        #set($selection=' selected="selected"')
+                                    #end
+                                    <option value="$TOOLKIT.esc.html($htmlValue)"$selection>$TOOLKIT.display.capitalize($prop.label)</option>
+                                #end
+                            </select>
+                        </div>
+                        <div class="form-group $CONSTANTS.blocks.imports.search.SEARCH_BOX_ORDER_CLASS">
+                            <label for="search-sort-order">$MESSAGES.blocks.imports.search.boxSortOrderLabel</label>
+                            <select id="search-sort-order" name="$CONSTANTS.blocks.imports.search.SEARCH_PARAM_SORT_DESC" class="form-control">
+                                #set($selection='')
+                                #if ($REQUEST.uriInfo.queryParameters.get($CONSTANTS.blocks.imports.search.SEARCH_PARAM_SORT_DESC).contains('true'))
+                                    #set($selection=' selected="selected"')
+                                #end
+                            ## Note: default order is ascending; we make use of the fact this first option is selected by default
+                                <option value="false">$MESSAGES.blocks.imports.search.boxSortOrderAsc</option>
+                                <option value="true"$selection>$MESSAGES.blocks.imports.search.boxSortOrderDesc</option>
+                            </select>
+                        </div>
+                    #end
+                #end
+
                 <hr>
-                <div class="form-inline search-options">
-                    <div class="form-group">
-                        <button type="reset" class="btn btn-default pull-right">$MESSAGES.blocks.imports.search.boxButtonReset</button>
-                        <button type="submit" class="btn btn-primary pull-right">$MESSAGES.blocks.imports.search.boxButtonSearch</button>
-                    </div>
+
+                <div class="form-group $CONSTANTS.blocks.imports.search.SEARCH_BOX_CONTROLS_CLASS">
+                    <button type="submit" class="btn">$MESSAGES.blocks.imports.search.boxButtonSearch</button>
+                    <button type="reset" class="btn">$MESSAGES.blocks.imports.search.boxButtonReset</button>
+                    <button type="button" class="btn" onclick="base.getPlugin('base.core.Commons').clearForm(this);">$MESSAGES.blocks.imports.search.boxButtonClear</button>
                 </div>
             </form>
         </div>

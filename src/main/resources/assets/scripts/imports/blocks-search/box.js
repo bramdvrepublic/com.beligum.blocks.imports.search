@@ -15,6 +15,7 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
         block: null,
         searchClassCombo: null,
         activeFiltersList: null,
+        enableSortToggle: null,
         addFilterCombo: null,
         lastSearchClass: null,
 
@@ -40,8 +41,11 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
         {
             var retVal = SearchBox.Class.Super.prototype.getConfigs.call(this, block, element);
 
+            retVal.push(this.addOptionalClass(Sidebar, block.element, SearchMessages.boxInline, SearchConstants.SEARCH_BOX_CLASS_INLINE));
+
             var _this = this;
             this.block = block;
+            this.enableSortToggle = this.addOptionalClass(Sidebar, block.element, SearchMessages.boxSortToggleLabel, null, null, SearchConstants.SEARCH_BOX_SORT_ARG);
             this.addFilterCombo = this.createCombobox(Sidebar, SearchMessages.boxFiltersPropertiesAdd, []);
             this.activeFiltersList = this.createListGroup(SearchMessages.boxFiltersPropertiesActive, true, this.filtersListReordered);
             this.searchClassCombo = this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.boxFiltersClassLabel, SearchConstants.SEARCH_BOX_TYPE_ARG, SearchConstants.SEARCH_CLASSES_ENDPOINT, 'title', 'curieName',
@@ -52,21 +56,22 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
                         _this.resetActiveFilters();
                     }
 
-                    _this.reinitAddFilterCombo();
+                    _this.updateFilterControls();
                 }
             );
 
             //bootstrap the controls
-            this.reinitAddFilterCombo();
+            this.updateFilterControls();
 
             var filterContainer = $('<div class="group"></div>');
             filterContainer.append($('<div class="title">' + SearchMessages.boxFiltersLabel + '</div>'));
+            //doesn't work yet because display none doesn't block the form from sending
+            //filterContainer.append(this.addOptionalClass(Sidebar, block.element, SearchMessages.boxNoQuery, SearchConstants.SEARCH_BOX_CLASS_NOQUERY));
             filterContainer.append(this.searchClassCombo);
+            filterContainer.append(this.enableSortToggle);
             filterContainer.append(this.addFilterCombo);
             filterContainer.append(this.activeFiltersList);
             retVal.push(filterContainer);
-
-            retVal.push(this.addOptionalClass(Sidebar, block.element, SearchMessages.boxInline, SearchConstants.SEARCH_BOX_CLASS_INLINE));
 
             return retVal;
         },
@@ -76,20 +81,21 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
         },
 
         //-----PRIVATE METHODS-----
-        reinitAddFilterCombo: function ()
+        updateFilterControls: function ()
         {
             var _this = this;
 
             var searchClassCurie = this.block.element.attr(SearchConstants.SEARCH_BOX_TYPE_ARG);
             if (searchClassCurie) {
-                //make sure we start out visible
+                //make sure we're visible
+                _this.enableSortToggle.removeClass('hidden');
                 _this.addFilterCombo.removeClass('hidden');
 
                 $.getJSON(BlocksConstants.RDF_PROPERTIES_ENDPOINT + "?" + BlocksConstants.RDF_RES_TYPE_CURIE_PARAM + "=" + searchClassCurie)
                     .done(function (data)
                     {
                         var activeFilters = [];
-                        var activeFiltersAttr = _this.block.element.attr(SearchConstants.SEARCH_BOX_FILTER_TERMS_ARG);
+                        var activeFiltersAttr = _this.block.element.attr(SearchConstants.SEARCH_BOX_FILTERS_ARG);
                         if (activeFiltersAttr) {
                             activeFilters = JSON.parse(atob(activeFiltersAttr));
                         }
@@ -107,15 +113,21 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
                                 value: entry['curieName'] === null ? '' : entry['curieName']
                             };
 
+                            //search the array of objects for the first matching index
+                            var idx = $.map(activeFilters, function(filter, idx) {
+                                if(filter && filter.curieName == obj.value) {
+                                    return idx;
+                                }
+                            })[0];
+
                             //if the value is not already in the active list, add it to the add-combobox
-                            var filterIdx = $.inArray(obj.value, activeFilters);
-                            if (filterIdx < 0) {
+                            if (typeof idx === "undefined") {
                                 allClassProps.push(obj);
                             }
                             //while we're iterating the data, we might as well 'augment' the filters array
                             // to be prepared for the next loop
                             else {
-                                activeFilters[filterIdx] = obj;
+                                activeFilters[idx] = obj;
                             }
                         });
 
@@ -153,6 +165,9 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
                     });
             }
             else {
+                _this.enableSortToggle.addClass('hidden');
+
+
                 _this.addFilterCombo.addClass('hidden');
                 _this.reinitCombobox(_this.addFilterCombo, []);
                 _this.resetActiveFilters();
@@ -230,13 +245,13 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
             //revert the combo toggle button back to nothing selected (reinitAddFilterCombo will also do this, but this will avoid flickering)
             this.addFilterCombo.find("button.dropdown-toggle").find('.text').text(BlocksMessages.comboboxEmptySelection);
             this.updateActiveFiltersAttr();
-            this.reinitAddFilterCombo();
+            this.updateFilterControls();
         },
         removeActiveFilter: function (listGroupItem)
         {
             listGroupItem.remove();
             this.updateActiveFiltersAttr();
-            this.reinitAddFilterCombo();
+            this.updateFilterControls();
         },
         resetActiveFilters: function ()
         {
@@ -247,7 +262,7 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
         },
         updateActiveFiltersAttr: function ()
         {
-            this.block.element.attr(SearchConstants.SEARCH_BOX_FILTER_TERMS_ARG, this.buildActiveFiltersValue());
+            this.block.element.attr(SearchConstants.SEARCH_BOX_FILTERS_ARG, this.buildActiveFiltersValue());
         },
         buildActiveFiltersValue: function ()
         {
@@ -255,7 +270,13 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
 
             this.activeFiltersList.find('.list-group-item').each(function (index)
             {
-                attrObj.push($(this).attr(TEMP_FILTER_ATTR));
+                //Note: the form of this object should match the one of com.beligum.blocks.imports.search.Controller.Filter
+                var obj = {
+                    curieName: $(this).attr(TEMP_FILTER_ATTR)
+                    //add additional config options here
+                };
+
+                attrObj.push(obj);
             });
 
             return btoa(JSON.stringify(attrObj));

@@ -2,6 +2,9 @@
 @import (reference) "/assets/webjars/bootstrap/3.3.4/less/mixins.less";
 @import (reference) "/assets/webjars/bootstrap/3.3.4/less/utilities.less";
 @import (reference) "/assets/webjars/bootstrap/3.3.4/less/variables.less";
+@import (reference) "/assets/webjars/bootstrap/3.3.4/less/forms.less";
+@import (reference) "/assets/webjars/bootstrap/3.3.4/less/buttons.less";
+@import (reference) "/assets/webjars/bootstrap/3.3.4/less/mixins/text-overflow.less";
 @import (reference) "/constants/blocks/imports/search?type=less";
 
 blocks-search-box {
@@ -12,37 +15,68 @@ blocks-search-box {
       //not responsive-friendly
       //min-width: 400px;
 
-      .form-inline {
-        width: 100%;
+      .form-inline;
 
-        &.secondary {
-          margin-top: 10px;
+      &.secondary {
+        margin-top: 10px;
+      }
+
+      .form-group {
+        margin-right: 15px;
+        margin-bottom: 15px;
+
+        label {
+          margin-right: 5px;
+          display: block;
         }
 
-        .form-group {
+        &.@{SEARCH_BOX_QUERY_CLASS} {
           width: 100%;
-
-          input[type='text'] {
+          .form-control {
             width: 100%;
           }
+        }
+        &.@{SEARCH_BOX_SORT_CLASS} {
 
-          select {
+        }
+        &.@{SEARCH_BOX_CONTROLS_CLASS} {
+          .pull-left;
+          margin-right: 0;
+          margin-bottom: 0;
+
+          button[type="submit"] {
+            .btn-primary;
           }
-
           button[type="reset"] {
+            .btn-default;
+            margin-left: 10px;
+          }
+          //this is the clear button
+          button[type="button"] {
+            .btn-default;
             margin-left: 10px;
           }
         }
       }
 
+      select {
+        max-width: 300px;
+      }
+
       hr {
-        margin-top: 10px;
+        //actually, this is 15px, but the .form-group already has a bottom margin of 15px
+        margin-top: 0px;
         //match it with the bottom form padding
         margin-bottom: 15px;
       }
     }
   }
 
+  &.@{SEARCH_BOX_CLASS_NOQUERY} {
+    .@{SEARCH_BOX_QUERY_CLASS} {
+      display: none;
+    }
+  }
   &.@{SEARCH_BOX_CLASS_INLINE} {
     .panel-search {
       display: inline-block;
@@ -54,6 +88,7 @@ blocks-search-box {
     .panel-search {
       display: block;
     }
+
     .form-control {
       margin-bottom: 10px;
     }
