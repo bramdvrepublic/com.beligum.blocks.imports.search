@@ -9,7 +9,7 @@
 
 blocks-search-box {
 
-  .panel-search {
+  .panel {
 
     form {
       //not responsive-friendly
@@ -85,12 +85,21 @@ blocks-search-box {
 
   // make some space between the select boxes
   @media (max-width: @screen-sm) {
-    .panel-search {
-      display: block;
-    }
 
-    .form-control {
-      margin-bottom: 10px;
+    .panel {
+      display: block;
+
+      form {
+        .form-control {
+          margin-bottom: 10px;
+        }
+        .form-group {
+          margin-right: 0;
+        }
+        select {
+          max-width: 100%;
+        }
+      }
     }
   }
 }

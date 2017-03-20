@@ -18,7 +18,7 @@
 ## sync with constant SEARCH_BOX_TYPE_ARG
 <template data-search-type="">
 
-    <div class="panel panel-default panel-search">
+    <div class="panel panel-default">
         <div class="panel-heading">
             <h3 class="panel-title">
                 #if(!$CONTROLLER.searchRequest.typeOf)
@@ -94,8 +94,8 @@
 
                 <div class="form-group $CONSTANTS.blocks.imports.search.SEARCH_BOX_CONTROLS_CLASS">
                     <button type="submit" class="btn">$MESSAGES.blocks.imports.search.boxButtonSearch</button>
-                    <button type="reset" class="btn">$MESSAGES.blocks.imports.search.boxButtonReset</button>
-                    <button type="button" class="btn" onclick="base.getPlugin('base.core.Commons').clearForm(this);">$MESSAGES.blocks.imports.search.boxButtonClear</button>
+##                    <button type="reset" class="btn">$MESSAGES.blocks.imports.search.boxButtonReset</button>
+                    <button type="button" class="btn" onclick="base.getPlugin('base.core.Commons').clearForm(this);">$MESSAGES.blocks.imports.search.boxButtonReset</button>
                 </div>
             </form>
         </div>
