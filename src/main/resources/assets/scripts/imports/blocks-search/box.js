@@ -63,7 +63,7 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
             //bootstrap the controls
             this.updateFilterControls();
 
-            var filterContainer = $('<div class="group"></div>');
+            var filterContainer = $('<div class="'+BlocksConstants.PANEL_GROUP_CLASS+'"></div>');
             filterContainer.append($('<div class="title">' + SearchMessages.boxFiltersLabel + '</div>'));
             //doesn't work yet because display none doesn't block the form from sending
             //filterContainer.append(this.addOptionalClass(Sidebar, block.element, SearchMessages.boxNoQuery, SearchConstants.SEARCH_BOX_CLASS_NOQUERY));
