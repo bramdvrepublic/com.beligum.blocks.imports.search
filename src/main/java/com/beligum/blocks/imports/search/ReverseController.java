@@ -75,7 +75,7 @@ public class ReverseController extends Controller
 
                 //note: this will return null on a newly created page
                 PageIndexEntry indexedPage = pageIndexConnection.get(requestedUri);
-                if (indexedPage!=null) {
+                if (indexedPage != null) {
                     org.apache.lucene.search.BooleanQuery pageQuery = new org.apache.lucene.search.BooleanQuery();
 
                     //Note: the URIs are indexed relatively (as opposed to the SPARQL endpoint)

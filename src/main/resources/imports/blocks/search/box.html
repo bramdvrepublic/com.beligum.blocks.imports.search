@@ -46,13 +46,13 @@
                                 <select id="$id" name="$CONSTANTS.blocks.imports.search.SEARCH_PARAM_FILTER" class="form-control">
                                 ## This is the empty selection
                                     <option value=""></option>
-                                    #foreach($val in $searchConfig.getPossibleValuesFor($filter))
-                                        #set($htmlValue=$filter.curieName+'='+$val)
+                                    #foreach($entry in $searchConfig.getPossibleValuesFor($filter))
+                                        #set($htmlValue=$filter.curieName+'='+$entry.value)
                                         #set($selection='')
                                         #if ($REQUEST.uriInfo.queryParameters.get($CONSTANTS.blocks.imports.search.SEARCH_PARAM_FILTER).contains($htmlValue))
                                             #set($selection=' selected="selected"')
                                         #end
-                                        <option value="$TOOLKIT.esc.html($htmlValue)"$selection>$val</option>
+                                        <option value="$TOOLKIT.esc.html($htmlValue)"$selection>$entry.key</option>
                                     #end
                                 </select>
                             </div>

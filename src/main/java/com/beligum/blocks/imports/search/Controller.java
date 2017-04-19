@@ -7,15 +7,17 @@ import com.beligum.base.utils.json.Json;
 import com.beligum.blocks.config.RdfFactory;
 import com.beligum.blocks.config.Settings;
 import com.beligum.blocks.config.StorageFactory;
+import com.beligum.blocks.endpoints.ifaces.RdfQueryEndpoint;
 import com.beligum.blocks.filesystem.index.LucenePageIndexer;
-import com.beligum.blocks.filesystem.index.LucenePageIndexerConnection;
+import com.beligum.blocks.filesystem.index.StringTupleRdfResult;
 import com.beligum.blocks.filesystem.index.entries.pages.IndexSearchRequest;
 import com.beligum.blocks.filesystem.index.entries.pages.IndexSearchResult;
 import com.beligum.blocks.filesystem.index.entries.pages.PageIndexEntry;
 import com.beligum.blocks.filesystem.index.ifaces.LuceneQueryConnection;
-import com.beligum.blocks.filesystem.index.ifaces.SparqlQueryConnection;
+import com.beligum.blocks.filesystem.index.ifaces.RdfTupleResult;
 import com.beligum.blocks.rdf.ifaces.RdfClass;
 import com.beligum.blocks.rdf.ifaces.RdfProperty;
+import com.beligum.blocks.rdf.ontology.factories.Terms;
 import com.beligum.blocks.rdf.ontology.vocabularies.RDF;
 import com.beligum.blocks.rdf.ontology.vocabularies.XSD;
 import com.beligum.blocks.templating.blocks.DefaultTemplateController;
@@ -26,17 +28,14 @@ import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.TermQuery;
-import org.openrdf.query.BindingSet;
-import org.openrdf.query.TupleQuery;
 import org.openrdf.query.TupleQueryResult;
-import org.openrdf.sail.lucene.LuceneSailSchema;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 
-import static com.beligum.blocks.filesystem.index.SesamePageIndexerConnection.SPARQL_OBJECT_BINDING_NAME;
-import static com.beligum.blocks.filesystem.index.SesamePageIndexerConnection.SPARQL_SUBJECT_BINDING_NAME;
+import static com.beligum.blocks.filesystem.index.SesamePageIndexConnection.SPARQL_OBJECT_BINDING_NAME;
+import static com.beligum.blocks.filesystem.index.SesamePageIndexConnection.SPARQL_SUBJECT_BINDING_NAME;
 import static com.beligum.blocks.imports.search.Controller.CacheKeys.SEARCH_REQUEST;
 import static com.beligum.blocks.imports.search.Controller.CacheKeys.SEARCH_RESULT;
 import static gen.com.beligum.blocks.imports.search.constants.blocks.imports.search.*;
@@ -292,7 +291,9 @@ public class Controller extends DefaultTemplateController
                     if (keyVal.length == 2) {
                         RdfProperty key = (RdfProperty) RdfFactory.getForResourceType(URI.create(keyVal[0]));
                         if (key != null) {
+                            //prepare the raw value for lookup in the index
                             Object val = key.prepareIndexValue(keyVal[1], locale);
+
                             String valStr = val == null ? null : val.toString();
                             if (!StringUtils.isEmpty(valStr)) {
                                 //TODO if you want to use this: make sure you rewrite the term query first (see else())
@@ -321,7 +322,7 @@ public class Controller extends DefaultTemplateController
                                         //this is a text-indexed alternative to the (more exact) term query above
                                         ComplexPhraseQueryParser queryParser = new ComplexPhraseQueryParser(key.getCurieName().toString(), LucenePageIndexer.DEFAULT_ANALYZER);
                                         queryParser.setInOrder(true);
-                                        query.add(queryParser.parse("\"" + LucenePageIndexerConnection.removeEscapedChars(valStr, "") + "\""), BooleanClause.Occur.FILTER);
+                                        query.add(queryParser.parse("\"" + LucenePageIndexer.removeEscapedChars(valStr, "") + "\""), BooleanClause.Occur.FILTER);
                                     }
                                     else {
                                         query.add(new TermQuery(new Term(key.getCurieName().toString(), valStr)), BooleanClause.Occur.FILTER);
@@ -351,10 +352,9 @@ public class Controller extends DefaultTemplateController
     /**
      * Returns a list of all distinct possible values for the given filter in the current language
      */
-    protected Set<String> searchAllFilterValues(URI resourceTypeCurie, URI resourcePropertyCurie, boolean onlyLiteral, int limit) throws IOException
+    protected RdfTupleResult<String, String> searchAllFilterValues(URI resourceTypeCurie, URI resourcePropertyCurie, boolean onlyLiteral, int limit) throws IOException
     {
-        //Note: a TreeSet will sort the strings naturally
-        Set<String> values = new TreeSet<>();
+        RdfTupleResult<String, String> retVal = null;
 
         RdfClass type = RdfFactory.getClassForResourceType(resourceTypeCurie);
         if (type == null) {
@@ -369,52 +369,141 @@ public class Controller extends DefaultTemplateController
         if (type != null && property != null) {
 
             Locale lang = R.i18n().getOptimalLocale();
+            RdfQueryEndpoint endpoint = property.getDataType().getEndpoint();
+            boolean external = endpoint != null && endpoint.isExternal();
+            RdfProperty[] labelProps = external ? endpoint.getExternalLabels(property.getDataType()) : null;
+            final String internalObjBinding = SPARQL_OBJECT_BINDING_NAME + "In";
+            final String externalObjBinding = SPARQL_OBJECT_BINDING_NAME + "Ex";
 
             StringBuilder queryBuilder = new StringBuilder();
-            final String searchPrefix = "search";
+            //final String searchPrefix = "search";
             queryBuilder.append("PREFIX ").append(Settings.instance().getRdfOntologyPrefix()).append(": <").append(Settings.instance().getRdfOntologyUri()).append("> \n");
-            queryBuilder.append("PREFIX ").append(searchPrefix).append(": <").append(LuceneSailSchema.NAMESPACE).append("> \n");
+            //queryBuilder.append("PREFIX ").append(searchPrefix).append(": <").append(LuceneSailSchema.NAMESPACE).append("> \n");
             queryBuilder.append("\n");
-            queryBuilder.append("SELECT DISTINCT")/*.append(" ?").append(SPARQL_SUBJECT_BINDING_NAME).append(" ?").append(SPARQL_PREDICATE_BINDING_NAME)*/.append(" ?")
-                        .append(SPARQL_OBJECT_BINDING_NAME)
-                        .append(" WHERE {\n");
+            queryBuilder.append("SELECT DISTINCT")/*.append(" ?").append(SPARQL_SUBJECT_BINDING_NAME).append(" ?").append(SPARQL_PREDICATE_BINDING_NAME)*/;
+            //we'll need this URL of the value later on
+            if (external) {
+                queryBuilder.append(" ?").append(internalObjBinding);
+            }
+            queryBuilder.append(" ?").append(SPARQL_OBJECT_BINDING_NAME);
+
+            queryBuilder.append(" WHERE {\n");
+
             //filter on class
             queryBuilder.append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" a <").append(type.getFullName().toString()).append("> . \n");
-            //triple binding + filter on property
-            queryBuilder.append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getFullName().toString()).append("> ?").append(SPARQL_OBJECT_BINDING_NAME)
-                        .append(" .\n");
 
-            //filter on language if we're dealing with a literal
-            if (!property.getDataType().equals(XSD.ANY_URI)) {
-                queryBuilder.append("\tFILTER(");
-                queryBuilder.append("(lang(?").append(SPARQL_OBJECT_BINDING_NAME).append(") = \"").append(lang.getLanguage()).append("\" || lang(?").append(SPARQL_OBJECT_BINDING_NAME)
-                            .append(") = \"\")");
-                if (onlyLiteral) {
-                    queryBuilder.append(" && isLiteral(?").append(SPARQL_OBJECT_BINDING_NAME).append(")");
+            //if we're dealing with an external ontology property, we need a little bit more plumbing
+            //Reasoning behind this is like so:
+            // - we build optional blocks of both the label property with language set and without language set
+            // - the priority in COALESCE is set to search for all properties with an explicit language set,
+            //   then all properties again without language set
+            // - in the end, the result is bound to the same variable as an internal query
+            if (external) {
+                //filter on property
+                queryBuilder.append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getFullName().toString()).append("> ?").append(internalObjBinding)
+                            .append(" .\n");
+                //bind the external resource
+                queryBuilder.append("\t").append("?").append(internalObjBinding).append(" <").append(Terms.sameAs.getFullName()).append("> ?").append(externalObjBinding).append(" .\n");
+                //make sure the right external type is selected
+                queryBuilder.append("\t").append("?").append(externalObjBinding).append(" a <").append(endpoint.getExternalClasses(property.getDataType()).getFullName()).append(">").append(" .\n");
+
+                StringBuilder coalesceBuilderLang = new StringBuilder();
+                StringBuilder coalesceBuilderNolang = new StringBuilder();
+                for (int i = 0; i < labelProps.length; i++) {
+
+                    RdfProperty labelProp = labelProps[i];
+                    String labelNameLang = String.valueOf(i + 1) + "l";
+                    String labelNameNolang = String.valueOf(i + 1) + "n";
+
+                    if (i > 0) {
+                        coalesceBuilderLang.append(", ");
+                        coalesceBuilderNolang.append(", ");
+                    }
+                    coalesceBuilderLang.append("?").append(labelNameLang);
+                    coalesceBuilderNolang.append("?").append(labelNameNolang);
+
+                    queryBuilder.append("\t").append("OPTIONAL {").append("\n");
+                    queryBuilder.append("\t").append("\t").append("?").append(externalObjBinding).append(" <").append(labelProp.getFullName()).append("> ?").append(labelNameLang).append(" .\n");
+                    queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.LANG, lang, labelNameLang));
+                    queryBuilder.append("\t").append("}").append("\n");
+
+                    queryBuilder.append("\t").append("OPTIONAL {").append("\n");
+                    queryBuilder.append("\t").append("\t").append("?").append(externalObjBinding).append(" <").append(labelProp.getFullName()).append("> ?").append(labelNameNolang).append(" .\n");
+                    queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.NOLANG, lang, labelNameNolang));
+                    queryBuilder.append("\t").append("}").append("\n");
                 }
-                queryBuilder.append(")\n");
+
+                //merge them together, but add all the optionals without language only after all the optionals with language
+                if (coalesceBuilderNolang.length() > 0) {
+                    coalesceBuilderLang.append(", ").append(coalesceBuilderNolang);
+                }
+
+                // COALESCE takes a list of arguments as input, and outputs the first of those arguments that does not correspond to an error.
+                // Since an unbound variable corresponds to an error, this will return the xxx if it exists, otherwise the yyy if it exists, otherwise...
+                queryBuilder.append("\t").append("BIND( COALESCE(").append(coalesceBuilderLang).append(") as ?").append(SPARQL_OBJECT_BINDING_NAME).append(" ) ").append("\n");
+            }
+            else {
+                //filter on property
+                queryBuilder.append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getFullName().toString()).append("> ?").append(SPARQL_OBJECT_BINDING_NAME)
+                            .append(" .\n");
+
+                queryBuilder.append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.BOTH, lang, SPARQL_OBJECT_BINDING_NAME)).append("\n");
             }
 
-            queryBuilder.append("}\n");
+            queryBuilder.append("}").append("\n");
+
+            queryBuilder.append("ORDER BY DESC(?").append(SPARQL_OBJECT_BINDING_NAME).append(")").append("\n");
 
             if (limit > 0) {
                 queryBuilder.append("LIMIT ").append(limit).append("\n");
             }
 
-            SparqlQueryConnection sparqlQueryConnection = StorageFactory.getTriplestoreQueryConnection();
-            TupleQuery query = sparqlQueryConnection.query(queryBuilder.toString());
-            try (TupleQueryResult result = query.evaluate()) {
-                while (result.hasNext()) {
-                    BindingSet triple = result.next();
-                    values.add(triple.getValue(SPARQL_OBJECT_BINDING_NAME).stringValue());
-                }
-            }
+            Logger.info(queryBuilder);
+
+            TupleQueryResult result = StorageFactory.getTriplestoreQueryConnection().query(queryBuilder.toString()).evaluate();
+
+            //make sure the result iterator will be closed at the end of this request
+            R.requestContext().registerClosable(retVal = new StringTupleRdfResult(result,
+                                                                                  SPARQL_OBJECT_BINDING_NAME,
+                                                                                  external ? internalObjBinding : SPARQL_OBJECT_BINDING_NAME));
         }
 
-        return values;
+        return retVal;
     }
 
     //-----PRIVATE METHODS-----
+    private enum FilterLang
+    {
+        LANG,
+        NOLANG,
+        BOTH
+    }
+    private CharSequence buildFilter(RdfProperty property, boolean onlyLiteral, FilterLang filterLang, Locale lang, String binding)
+    {
+        //filter on language if we're dealing with a literal
+        StringBuilder retVal = new StringBuilder();
+
+        if (!property.getDataType().equals(XSD.ANY_URI)) {
+            retVal.append("FILTER(");
+            retVal.append("(");
+            if (filterLang == FilterLang.LANG || filterLang == FilterLang.BOTH) {
+                retVal.append("lang(?").append(binding).append(") = \"").append(lang.getLanguage()).append("\"");
+            }
+            if (filterLang == FilterLang.BOTH) {
+                retVal.append(" || ");
+            }
+            if (filterLang == FilterLang.NOLANG || filterLang == FilterLang.BOTH) {
+                retVal.append("lang(?").append(binding).append(") = \"\"");
+            }
+            retVal.append(")");
+            if (onlyLiteral) {
+                retVal.append(" && isLiteral(?").append(binding).append(")");
+            }
+            retVal.append(")\n");
+        }
+
+        return retVal;
+    }
 
     //-----INNER CLASSES-----
     public static class SearchConfig
@@ -437,7 +526,7 @@ public class Controller extends DefaultTemplateController
         {
             return filters;
         }
-        public Set<String> getPossibleValuesFor(Filter filter) throws IOException
+        public RdfTupleResult<String, String> getPossibleValuesFor(Filter filter) throws IOException
         {
             //TODO we might want to cache this value across requests
             return this.controller.searchAllFilterValues(this.controller.getSearchRequest().getTypeOf().getCurieName(), filter.getProperty().getCurieName(), false, 1000);
