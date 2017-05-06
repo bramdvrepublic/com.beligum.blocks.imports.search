@@ -6,13 +6,17 @@
         #if($CONTROLLER.searchResult.totalHits < $lastIndex)
             #set($lastIndex = $CONTROLLER.searchResult.totalHits)
         #end
-        #if($lastIndex > 0)
-            $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDescription, $firstIndex, $lastIndex)
-        #else
-            $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDescription, 0, $lastIndex)
-        #end
-        <span class="total-hits">$TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsTitle, $CONTROLLER.searchResult.totalHits) $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDuration, $CONTROLLER.searchResult.searchDurationSeconds)</span>
 
+        #if($CONTROLLER.searchResult.results && !$CONTROLLER.searchResult.results.empty)
+            #if($lastIndex > 0)
+                $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDescription, $firstIndex, $lastIndex)
+            #else
+                $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDescription, 0, $lastIndex)
+            #end
+            <span class="total-hits">$TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsTitle, $CONTROLLER.searchResult.totalHits) $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDuration, $CONTROLLER.searchResult.searchDurationSeconds)</span>
+        #else
+            $MESSAGES.blocks.imports.search.boxResultsTitleEmpty
+        #end
     </div>
     <div class="panel-body">
         #set($maxPageFloat = $CONTROLLER.searchResult.totalHits / $CONTROLLER.searchResult.pageSize)

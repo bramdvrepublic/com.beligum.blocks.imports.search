@@ -68,7 +68,7 @@ public class ReverseController extends Controller
 
                 //first, look up the resource URI for the current page (because that's the one used in RDF-indexation)
                 URI requestedUri = R.requestContext().getJaxRsRequest().getUriInfo().getRequestUri();
-                PageIndexConnection pageIndexConnection = StorageFactory.getMainPageIndexer().connect();
+                PageIndexConnection pageIndexConnection = StorageFactory.getMainPageIndexer().connect(null);
 
                 //let's not return nulls, so we can always use .size() and so on
                 IndexSearchResult searchResult = new IndexSearchResult(new ArrayList<>());
