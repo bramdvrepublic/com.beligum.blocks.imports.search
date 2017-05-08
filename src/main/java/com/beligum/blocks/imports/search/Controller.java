@@ -384,8 +384,6 @@ public class Controller extends DefaultTemplateController
                 RdfQueryEndpoint endpoint = property.getDataType().getEndpoint();
                 boolean external = endpoint != null && endpoint.isExternal();
 
-                //this is a array of ordered properties that are possible human-readable label candidates
-                RdfProperty[] labelProps = endpoint.getLabelCandidates(property.getDataType());
                 final String internalObjBinding = SPARQL_OBJECT_BINDING_NAME + "In";
                 final String externalObjBinding = SPARQL_OBJECT_BINDING_NAME + "Ex";
 
@@ -416,6 +414,9 @@ public class Controller extends DefaultTemplateController
                     //filter on property
                     queryBuilder.append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getFullName().toString()).append("> ?").append(internalObjBinding)
                                 .append(" .\n");
+
+                    //this is a array of ordered properties that are possible human-readable label candidates
+                    RdfProperty[] labelProps = endpoint.getLabelCandidates(property.getDataType());
 
                     //select the label subject
                     String labelSubject = external ? externalObjBinding : internalObjBinding;
