@@ -8,24 +8,20 @@ import com.beligum.blocks.config.RdfFactory;
 import com.beligum.blocks.config.Settings;
 import com.beligum.blocks.config.StorageFactory;
 import com.beligum.blocks.endpoints.ifaces.RdfQueryEndpoint;
-import com.beligum.blocks.filesystem.index.BooleanRdfResult;
 import com.beligum.blocks.filesystem.index.LucenePageIndexer;
-import com.beligum.blocks.filesystem.index.StringTupleRdfResult;
 import com.beligum.blocks.filesystem.index.entries.pages.IndexSearchRequest;
 import com.beligum.blocks.filesystem.index.entries.pages.IndexSearchResult;
 import com.beligum.blocks.filesystem.index.entries.pages.PageIndexEntry;
 import com.beligum.blocks.filesystem.index.ifaces.LuceneQueryConnection;
 import com.beligum.blocks.filesystem.index.ifaces.RdfTupleResult;
+import com.beligum.blocks.filesystem.index.results.AutoTupleRdfResult;
 import com.beligum.blocks.rdf.ifaces.RdfClass;
 import com.beligum.blocks.rdf.ifaces.RdfProperty;
 import com.beligum.blocks.rdf.ontology.factories.Terms;
-import com.beligum.blocks.rdf.ontology.vocabularies.RDF;
-import com.beligum.blocks.rdf.ontology.vocabularies.XSD;
 import com.beligum.blocks.templating.blocks.DefaultTemplateController;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.TermQuery;
@@ -314,20 +310,25 @@ public class Controller extends DefaultTemplateController
                                     query.add(subQuery, BooleanClause.Occur.FILTER);
                                 }
                                 else {
-                                    if (key.getDataType().equals(XSD.STRING)
-                                        || key.getDataType().equals(XSD.NORMALIZED_STRING)
-                                        || key.getDataType().equals(RDF.LANGSTRING)
-                                        || key.getDataType().equals(RDF.HTML)) {
-
-                                        //TODO as long as we haven't re-indexed everything after 20/03/17 (to index strings as constants too), we have to use this for strings
-                                        //this is a text-indexed alternative to the (more exact) term query above
-                                        ComplexPhraseQueryParser queryParser = new ComplexPhraseQueryParser(key.getCurieName().toString(), LucenePageIndexer.DEFAULT_ANALYZER);
-                                        queryParser.setInOrder(true);
-                                        query.add(queryParser.parse("\"" + LucenePageIndexer.removeEscapedChars(valStr, "") + "\""), BooleanClause.Occur.FILTER);
-                                    }
-                                    else {
-                                        query.add(new TermQuery(new Term(key.getCurieName().toString(), valStr)), BooleanClause.Occur.FILTER);
-                                    }
+                                    //This is old code we keep as a reference, but in some cases, it didn't work as expected.
+                                    //Since we have good reindexing code now, we can easily reindex everything, so the term query works as expected.
+                                    //                                    if (key.getDataType().equals(XSD.STRING)
+                                    //                                        || key.getDataType().equals(XSD.NORMALIZED_STRING)
+                                    //                                        || key.getDataType().equals(RDF.LANGSTRING)
+                                    //                                        || key.getDataType().equals(RDF.HTML)) {
+                                    //
+                                    //                                        //TODO as long as we haven't re-indexed everything after 20/03/17 (to index strings as constants too), we have to use this for strings
+                                    //                                        //this is a text-indexed alternative to the (more exact) term query below
+                                    //                                        ComplexPhraseQueryParser queryParser = new ComplexPhraseQueryParser(key.getCurieName().toString(), LucenePageIndexer.DEFAULT_ANALYZER);
+                                    //                                        queryParser.setInOrder(true);
+                                    //
+                                    //                                        String valStrEsc = LucenePageIndexer.removeEscapedChars(valStr, "");
+                                    //
+                                    //                                        query.add(queryParser.parse("\"" + valStr + "\""), BooleanClause.Occur.FILTER);
+                                    //                                    }
+                                    //                                    else {
+                                    query.add(new TermQuery(new Term(key.getCurieName().toString(), valStr)), BooleanClause.Occur.FILTER);
+                                    //                                    }
                                 }
 
                                 List<String> values = retVal.get(key);
@@ -353,7 +354,7 @@ public class Controller extends DefaultTemplateController
     /**
      * Returns a list of all distinct possible values for the given filter in the current language
      */
-    protected RdfTupleResult<String, String> searchAllFilterValues(URI resourceTypeCurie, URI resourcePropertyCurie, boolean onlyLiteral, int limit) throws IOException
+    protected RdfTupleResult<String, String> searchAllFilterValues(URI resourceTypeCurie, URI resourcePropertyCurie, boolean onlyLiteral, boolean caseInsensitive, int limit) throws IOException
     {
         RdfTupleResult<String, String> retVal = null;
 
@@ -369,143 +370,150 @@ public class Controller extends DefaultTemplateController
 
         if (type != null && property != null) {
 
-            RdfClass propertyDatatype = property.getDataType();
+            Locale lang = R.i18n().getOptimalLocale();
 
-            if (propertyDatatype.equals(XSD.BOOLEAN)) {
-                retVal = new BooleanRdfResult();
+            //this means we're dealing with a property that has URI values (internal or external)
+            boolean resource = property.getDataType().getType().equals(RdfClass.Type.CLASS);
+
+            //this means the endpoint of this property is external (or the property is external)
+            RdfQueryEndpoint endpoint = property.getDataType().getEndpoint();
+            boolean external = endpoint != null && endpoint.isExternal();
+
+            final String internalObjBinding = SPARQL_OBJECT_BINDING_NAME + "In";
+            final String externalObjBinding = SPARQL_OBJECT_BINDING_NAME + "Ex";
+
+            StringBuilder queryBuilder = new StringBuilder();
+            //final String searchPrefix = "search";
+            queryBuilder.append("PREFIX ").append(Settings.instance().getRdfOntologyPrefix()).append(": <").append(Settings.instance().getRdfOntologyUri()).append("> \n");
+            //queryBuilder.append("PREFIX ").append(searchPrefix).append(": <").append(LuceneSailSchema.NAMESPACE).append("> \n");
+            queryBuilder.append("\n");
+            queryBuilder.append("SELECT DISTINCT")/*.append(" ?").append(SPARQL_SUBJECT_BINDING_NAME).append(" ?").append(SPARQL_PREDICATE_BINDING_NAME)*/;
+            //we'll need this URL of the value later on
+            if (resource) {
+                queryBuilder.append(" ?").append(internalObjBinding);
+            }
+            queryBuilder.append(" ?").append(SPARQL_OBJECT_BINDING_NAME);
+
+            queryBuilder.append(" WHERE {\n");
+
+            //filter on class
+            queryBuilder.append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" a <").append(type.getFullName().toString()).append("> . \n");
+
+            //if we're dealing with an external ontology property, we need a little bit more plumbing
+            //Reasoning behind this is like so:
+            // - we build optional blocks of both the label property with language set and without language set
+            // - the priority in COALESCE is set to search for all properties with an explicit language set,
+            //   then all properties again without language set
+            // - in the end, the result is bound to the same variable as an internal query
+            if (resource) {
+                //filter on property
+                queryBuilder.append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getFullName().toString()).append("> ?").append(internalObjBinding)
+                            .append(" .\n");
+
+                //this is a array of ordered properties that are possible human-readable label candidates
+                RdfProperty[] labelProps = endpoint.getLabelCandidates(property.getDataType());
+
+                //select the label subject
+                String labelSubject = external ? externalObjBinding : internalObjBinding;
+
+                //if we're dealing with an external reference, we need to extra join to bind the local resource to the external one
+                //and selecting the right class of the external resource
+                if (external) {
+                    //bind the external resource
+                    queryBuilder.append("\t").append("?").append(internalObjBinding).append(" <").append(Terms.sameAs.getFullName()).append("> ?").append(externalObjBinding).append(" .\n");
+                    //make sure the right external type is selected
+                    queryBuilder.append("\t").append("?").append(externalObjBinding).append(" a <").append(endpoint.getExternalClasses(property.getDataType()).getFullName()).append(">")
+                                .append(" .\n");
+                }
+
+                StringBuilder coalesceBuilderLang = new StringBuilder();
+                StringBuilder coalesceBuilderNolang = new StringBuilder();
+                for (int i = 0; i < labelProps.length; i++) {
+
+                    RdfProperty labelProp = labelProps[i];
+                    String labelNameLang = String.valueOf(i + 1) + "l";
+                    String labelNameNolang = String.valueOf(i + 1) + "n";
+
+                    if (i > 0) {
+                        coalesceBuilderLang.append(", ");
+                        coalesceBuilderNolang.append(", ");
+                    }
+                    coalesceBuilderLang.append("?").append(labelNameLang);
+                    coalesceBuilderNolang.append("?").append(labelNameNolang);
+
+                    queryBuilder.append("\t").append("OPTIONAL {").append("\n");
+                    queryBuilder.append("\t").append("\t").append("?").append(labelSubject).append(" <").append(labelProp.getFullName()).append("> ?").append(labelNameLang).append(" .\n");
+                    queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.LANG, lang, labelNameLang));
+                    queryBuilder.append("\t").append("}").append("\n");
+
+                    queryBuilder.append("\t").append("OPTIONAL {").append("\n");
+                    queryBuilder.append("\t").append("\t").append("?").append(labelSubject).append(" <").append(labelProp.getFullName()).append("> ?").append(labelNameNolang).append(" .\n");
+                    queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.NOLANG, lang, labelNameNolang));
+                    queryBuilder.append("\t").append("}").append("\n");
+                }
+
+                //merge them together, but add all the optionals without language only after all the optionals with language
+                if (coalesceBuilderNolang.length() > 0) {
+                    coalesceBuilderLang.append(", ").append(coalesceBuilderNolang);
+                }
+
+                // COALESCE takes a list of arguments as input, and outputs the first of those arguments that does not correspond to an error.
+                // Since an unbound variable corresponds to an error, this will return the xxx if it exists, otherwise the yyy if it exists, and so on.
+                queryBuilder.append("\t").append("BIND( COALESCE(").append(coalesceBuilderLang).append(") as ?").append(SPARQL_OBJECT_BINDING_NAME).append(" ) ").append("\n");
             }
             else {
-                Locale lang = R.i18n().getOptimalLocale();
 
-                //this means we're dealing with a property that has URI values (internal or external)
-                boolean resource = property.getDataType().getType().equals(RdfClass.Type.CLASS);
+                //directly filter on the literal property (eg. a string)
+                //note that this is a simplified version of the COALESCE method above (for one language and one object binding)
 
-                //this means the endpoint of this property is external (or the property is external)
-                RdfQueryEndpoint endpoint = property.getDataType().getEndpoint();
-                boolean external = endpoint != null && endpoint.isExternal();
+                String labelNameLang = "1l";
+                String labelNameNolang = "1n";
 
-                final String internalObjBinding = SPARQL_OBJECT_BINDING_NAME + "In";
-                final String externalObjBinding = SPARQL_OBJECT_BINDING_NAME + "Ex";
+                queryBuilder.append("\t").append("OPTIONAL {").append("\n");
+                queryBuilder.append("\t").append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getFullName()).append("> ?").append(labelNameLang).append(" .\n");
+                queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.LANG, lang, labelNameLang));
+                queryBuilder.append("\t").append("}").append("\n");
 
-                StringBuilder queryBuilder = new StringBuilder();
-                //final String searchPrefix = "search";
-                queryBuilder.append("PREFIX ").append(Settings.instance().getRdfOntologyPrefix()).append(": <").append(Settings.instance().getRdfOntologyUri()).append("> \n");
-                //queryBuilder.append("PREFIX ").append(searchPrefix).append(": <").append(LuceneSailSchema.NAMESPACE).append("> \n");
-                queryBuilder.append("\n");
-                queryBuilder.append("SELECT DISTINCT")/*.append(" ?").append(SPARQL_SUBJECT_BINDING_NAME).append(" ?").append(SPARQL_PREDICATE_BINDING_NAME)*/;
-                //we'll need this URL of the value later on
-                if (resource) {
-                    queryBuilder.append(" ?").append(internalObjBinding);
-                }
-                queryBuilder.append(" ?").append(SPARQL_OBJECT_BINDING_NAME);
+                queryBuilder.append("\t").append("OPTIONAL {").append("\n");
+                queryBuilder.append("\t").append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getFullName()).append("> ?").append(labelNameNolang).append(" .\n");
+                queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.NOLANG, lang, labelNameNolang));
+                queryBuilder.append("\t").append("}").append("\n");
 
-                queryBuilder.append(" WHERE {\n");
+                queryBuilder.append("\t").append("BIND( COALESCE(").append("?").append(labelNameLang).append(",?").append(labelNameNolang).append(") as ?").append(SPARQL_OBJECT_BINDING_NAME)
+                            .append(" ) ").append("\n");
 
-                //filter on class
-                queryBuilder.append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" a <").append(type.getFullName().toString()).append("> . \n");
-
-                //if we're dealing with an external ontology property, we need a little bit more plumbing
-                //Reasoning behind this is like so:
-                // - we build optional blocks of both the label property with language set and without language set
-                // - the priority in COALESCE is set to search for all properties with an explicit language set,
-                //   then all properties again without language set
-                // - in the end, the result is bound to the same variable as an internal query
-                if (resource) {
-                    //filter on property
-                    queryBuilder.append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getFullName().toString()).append("> ?").append(internalObjBinding)
-                                .append(" .\n");
-
-                    //this is a array of ordered properties that are possible human-readable label candidates
-                    RdfProperty[] labelProps = endpoint.getLabelCandidates(property.getDataType());
-
-                    //select the label subject
-                    String labelSubject = external ? externalObjBinding : internalObjBinding;
-
-                    //if we're dealing with an external reference, we need to extra joining to bind the local resource to the external one
-                    //and selecting the right class of the external resource
-                    if (external) {
-                        //bind the external resource
-                        queryBuilder.append("\t").append("?").append(internalObjBinding).append(" <").append(Terms.sameAs.getFullName()).append("> ?").append(externalObjBinding).append(" .\n");
-                        //make sure the right external type is selected
-                        queryBuilder.append("\t").append("?").append(externalObjBinding).append(" a <").append(endpoint.getExternalClasses(property.getDataType()).getFullName()).append(">")
-                                    .append(" .\n");
-                    }
-
-                    StringBuilder coalesceBuilderLang = new StringBuilder();
-                    StringBuilder coalesceBuilderNolang = new StringBuilder();
-                    for (int i = 0; i < labelProps.length; i++) {
-
-                        RdfProperty labelProp = labelProps[i];
-                        String labelNameLang = String.valueOf(i + 1) + "l";
-                        String labelNameNolang = String.valueOf(i + 1) + "n";
-
-                        if (i > 0) {
-                            coalesceBuilderLang.append(", ");
-                            coalesceBuilderNolang.append(", ");
-                        }
-                        coalesceBuilderLang.append("?").append(labelNameLang);
-                        coalesceBuilderNolang.append("?").append(labelNameNolang);
-
-                        queryBuilder.append("\t").append("OPTIONAL {").append("\n");
-                        queryBuilder.append("\t").append("\t").append("?").append(labelSubject).append(" <").append(labelProp.getFullName()).append("> ?").append(labelNameLang).append(" .\n");
-                        queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.LANG, lang, labelNameLang));
-                        queryBuilder.append("\t").append("}").append("\n");
-
-                        queryBuilder.append("\t").append("OPTIONAL {").append("\n");
-                        queryBuilder.append("\t").append("\t").append("?").append(labelSubject).append(" <").append(labelProp.getFullName()).append("> ?").append(labelNameNolang).append(" .\n");
-                        queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.NOLANG, lang, labelNameNolang));
-                        queryBuilder.append("\t").append("}").append("\n");
-                    }
-
-                    //merge them together, but add all the optionals without language only after all the optionals with language
-                    if (coalesceBuilderNolang.length() > 0) {
-                        coalesceBuilderLang.append(", ").append(coalesceBuilderNolang);
-                    }
-
-                    // COALESCE takes a list of arguments as input, and outputs the first of those arguments that does not correspond to an error.
-                    // Since an unbound variable corresponds to an error, this will return the xxx if it exists, otherwise the yyy if it exists, otherwise...
-                    queryBuilder.append("\t").append("BIND( COALESCE(").append(coalesceBuilderLang).append(") as ?").append(SPARQL_OBJECT_BINDING_NAME).append(" ) ").append("\n");
-                }
-                else {
-                    //this means the datatype is a URI (eg. a Person) and we need to find it's label (title)
-                    if (property.getDataType().getType().equals(RdfClass.Type.CLASS)) {
-                        queryBuilder.append("\t")
-                                    .append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getFullName().toString()).append("> ?").append(internalObjBinding)
-                                    .append(" .\n");
-                        queryBuilder.append("\t")
-                                    .append("?").append(internalObjBinding).append(" <").append(Terms.title.getFullName()).append("> ?").append(SPARQL_OBJECT_BINDING_NAME)
-                                    .append(" .\n");
-                    }
-                    else {
-                        //directly filter on the literal property (eg. a string)
-                        queryBuilder.append("\t")
-                                    .append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getFullName().toString()).append("> ?").append(SPARQL_OBJECT_BINDING_NAME)
-                                    .append(" .\n");
-                    }
-
-                    queryBuilder.append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.BOTH, lang, SPARQL_OBJECT_BINDING_NAME)).append("\n");
-                }
-
-                queryBuilder.append("}").append("\n");
-
-                queryBuilder.append("ORDER BY ASC(?").append(SPARQL_OBJECT_BINDING_NAME).append(")").append("\n");
-
-                if (limit > 0) {
-                    queryBuilder.append("LIMIT ").append(limit).append("\n");
-                }
-
-                //Logger.info(queryBuilder);
-
-                TupleQueryResult result = StorageFactory.getTriplestoreQueryConnection().query(queryBuilder.toString()).evaluate();
-
-                retVal = new StringTupleRdfResult(result,
-                                                  SPARQL_OBJECT_BINDING_NAME,
-                                                  //for resources, we return the URI as the value,
-                                                  //for literals, we use the literal object
-                                                  resource ? internalObjBinding : SPARQL_OBJECT_BINDING_NAME);
             }
 
-            //make sure the result iterator will be closed at the end of this request
+            //exclude all null values
+            queryBuilder.append("\t").append("FILTER( BOUND(").append("?").append(SPARQL_OBJECT_BINDING_NAME).append(") ) ").append("\n");
+
+            queryBuilder.append("}").append("\n");
+
+            if (caseInsensitive) {
+                //Sesame extension function that allows for case-invariant sorting (which feels more natural in filter dropdowns)
+                //see http://sesame-general.435816.n3.nabble.com/Case-insensitive-ORDER-BY-in-SPARQL-td890845.html
+                queryBuilder.append("ORDER BY ASC(fn:lower-case(str(?").append(SPARQL_OBJECT_BINDING_NAME).append(")))").append("\n");
+            }
+            else {
+                queryBuilder.append("ORDER BY ASC(?").append(SPARQL_OBJECT_BINDING_NAME).append(")").append("\n");
+            }
+
+            if (limit > 0) {
+                queryBuilder.append("LIMIT ").append(limit).append("\n");
+            }
+
+            //Logger.info(queryBuilder);
+
+            TupleQueryResult result = StorageFactory.getTriplestoreQueryConnection().query(queryBuilder.toString()).evaluate();
+
+            retVal = new AutoTupleRdfResult(property,
+                                            result,
+                                            SPARQL_OBJECT_BINDING_NAME,
+                                            //for resources, we return the URI as the value,
+                                            //for literals, we use the literal object
+                                            resource ? internalObjBinding : SPARQL_OBJECT_BINDING_NAME);
+
+            //make sure the result iterator will get closed at the end of this request
             R.requestContext().registerClosable(retVal);
         }
 
@@ -582,7 +590,7 @@ public class Controller extends DefaultTemplateController
         public RdfTupleResult<String, String> getPossibleValuesFor(Filter filter) throws IOException
         {
             //TODO we might want to cache this value across requests
-            return this.controller.searchAllFilterValues(this.controller.getSearchRequest().getTypeOf().getCurieName(), filter.getProperty().getCurieName(), false, 1000);
+            return this.controller.searchAllFilterValues(this.controller.getSearchRequest().getTypeOf().getCurieName(), filter.getProperty().getCurieName(), false, true, 1000);
         }
     }
 
