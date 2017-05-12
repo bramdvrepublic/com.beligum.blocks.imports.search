@@ -148,7 +148,7 @@ public class Controller extends DefaultTemplateController
     //-----PUBLIC METHODS-----
     public SearchConfig getSearchConfig()
     {
-        return new SearchConfig(this, this.config.containsKey(SEARCH_BOX_SORT_ARG), this.parseSearchFilters(this.config.get(SEARCH_BOX_FILTERS_ARG)));
+        return new SearchConfig(this, this.config.containsKey(SEARCH_BOX_SORT_ARG), this.parseSearchFilters(this.config.get(SEARCH_BOX_FILTERS_ARG)), this.getSearchLanguage());
     }
     public IndexSearchRequest getSearchRequest()
     {
@@ -171,7 +171,7 @@ public class Controller extends DefaultTemplateController
             IndexSearchResult searchResult = new IndexSearchResult(new ArrayList<>());
             try {
                 IndexSearchRequest searchRequest = this.getSearchRequest();
-                Locale locale = R.i18n().getOptimalLocale();
+                Locale locale = this.getSearchLanguage();
 
                 //set some defaults if still empty..
                 if (searchRequest.getSortDescending() == null) {
@@ -205,7 +205,7 @@ public class Controller extends DefaultTemplateController
                     pageQuery.add(queryConnection.buildWildcardQuery(null, searchRequest.getSearchTerm(), false), BooleanClause.Occur.MUST);
                 }
 
-                //this.searchResult = StorageFactory.getTriplestoreQueryConnection().search(rdfClass, searchTerm, new HashMap<RdfProperty, String>(), sortField, false, RESOURCES_ON_PAGE, selectedPage, R.i18n().getOptimalLocale());
+                //this.searchResult = StorageFactory.getTriplestoreQueryConnection().search(rdfClass, searchTerm, new HashMap<RdfProperty, String>(), sortField, false, RESOURCES_ON_PAGE, selectedPage, this.getSearchLanguage());
                 searchResult = queryConnection.search(pageQuery, searchRequest.getSortField(), searchRequest.getSortDescending(), searchRequest.getPageSize(), searchRequest.getPageIndex());
             }
             catch (Exception e) {
@@ -354,7 +354,8 @@ public class Controller extends DefaultTemplateController
     /**
      * Returns a list of all distinct possible values for the given filter in the current language
      */
-    protected RdfTupleResult<String, String> searchAllFilterValues(URI resourceTypeCurie, URI resourcePropertyCurie, boolean onlyLiteral, boolean caseInsensitive, int limit) throws IOException
+    protected RdfTupleResult<String, String> searchAllFilterValues(URI resourceTypeCurie, URI resourcePropertyCurie, boolean onlyLiteral, boolean caseInsensitive, int limit, Locale language)
+                    throws IOException
     {
         RdfTupleResult<String, String> retVal = null;
 
@@ -369,8 +370,6 @@ public class Controller extends DefaultTemplateController
         }
 
         if (type != null && property != null) {
-
-            Locale lang = R.i18n().getOptimalLocale();
 
             //this means we're dealing with a property that has URI values (internal or external)
             boolean resource = property.getDataType().getType().equals(RdfClass.Type.CLASS);
@@ -443,12 +442,12 @@ public class Controller extends DefaultTemplateController
 
                     queryBuilder.append("\t").append("OPTIONAL {").append("\n");
                     queryBuilder.append("\t").append("\t").append("?").append(labelSubject).append(" <").append(labelProp.getFullName()).append("> ?").append(labelNameLang).append(" .\n");
-                    queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.LANG, lang, labelNameLang));
+                    queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.LANG, language, labelNameLang));
                     queryBuilder.append("\t").append("}").append("\n");
 
                     queryBuilder.append("\t").append("OPTIONAL {").append("\n");
                     queryBuilder.append("\t").append("\t").append("?").append(labelSubject).append(" <").append(labelProp.getFullName()).append("> ?").append(labelNameNolang).append(" .\n");
-                    queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.NOLANG, lang, labelNameNolang));
+                    queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.NOLANG, language, labelNameNolang));
                     queryBuilder.append("\t").append("}").append("\n");
                 }
 
@@ -471,12 +470,12 @@ public class Controller extends DefaultTemplateController
 
                 queryBuilder.append("\t").append("OPTIONAL {").append("\n");
                 queryBuilder.append("\t").append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getFullName()).append("> ?").append(labelNameLang).append(" .\n");
-                queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.LANG, lang, labelNameLang));
+                queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.LANG, language, labelNameLang));
                 queryBuilder.append("\t").append("}").append("\n");
 
                 queryBuilder.append("\t").append("OPTIONAL {").append("\n");
                 queryBuilder.append("\t").append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getFullName()).append("> ?").append(labelNameNolang).append(" .\n");
-                queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.NOLANG, lang, labelNameNolang));
+                queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.NOLANG, language, labelNameNolang));
                 queryBuilder.append("\t").append("}").append("\n");
 
                 queryBuilder.append("\t").append("BIND( COALESCE(").append("?").append(labelNameLang).append(",?").append(labelNameNolang).append(") as ?").append(SPARQL_OBJECT_BINDING_NAME)
@@ -511,7 +510,8 @@ public class Controller extends DefaultTemplateController
                                             SPARQL_OBJECT_BINDING_NAME,
                                             //for resources, we return the URI as the value,
                                             //for literals, we use the literal object
-                                            resource ? internalObjBinding : SPARQL_OBJECT_BINDING_NAME);
+                                            resource ? internalObjBinding : SPARQL_OBJECT_BINDING_NAME,
+                                            language);
 
             //make sure the result iterator will get closed at the end of this request
             R.requestContext().registerClosable(retVal);
@@ -565,6 +565,10 @@ public class Controller extends DefaultTemplateController
 
         return retVal;
     }
+    private Locale getSearchLanguage()
+    {
+        return R.i18n().getOptimalLocale();
+    }
 
     //-----INNER CLASSES-----
     public static class SearchConfig
@@ -572,12 +576,14 @@ public class Controller extends DefaultTemplateController
         private Controller controller;
         private boolean sortEnabled;
         private Filter[] filters;
+        private Locale language;
 
-        public SearchConfig(Controller controller, boolean sortEnabled, Filter[] filters)
+        public SearchConfig(Controller controller, boolean sortEnabled, Filter[] filters, Locale language)
         {
             this.controller = controller;
             this.sortEnabled = sortEnabled;
             this.filters = filters;
+            this.language = language;
         }
         public boolean isSortEnabled()
         {
@@ -590,7 +596,7 @@ public class Controller extends DefaultTemplateController
         public RdfTupleResult<String, String> getPossibleValuesFor(Filter filter) throws IOException
         {
             //TODO we might want to cache this value across requests
-            return this.controller.searchAllFilterValues(this.controller.getSearchRequest().getTypeOf().getCurieName(), filter.getProperty().getCurieName(), false, true, 1000);
+            return this.controller.searchAllFilterValues(this.controller.getSearchRequest().getTypeOf().getCurieName(), filter.getProperty().getCurieName(), false, true, 1000, this.language);
         }
     }
 
