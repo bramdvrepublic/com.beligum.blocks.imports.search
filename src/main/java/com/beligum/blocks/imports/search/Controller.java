@@ -8,7 +8,6 @@ import com.beligum.blocks.config.RdfFactory;
 import com.beligum.blocks.config.Settings;
 import com.beligum.blocks.config.StorageFactory;
 import com.beligum.blocks.endpoints.ifaces.RdfQueryEndpoint;
-import com.beligum.blocks.filesystem.index.LucenePageIndexer;
 import com.beligum.blocks.filesystem.index.entries.pages.IndexSearchRequest;
 import com.beligum.blocks.filesystem.index.entries.pages.IndexSearchResult;
 import com.beligum.blocks.filesystem.index.entries.pages.PageIndexEntry;
@@ -23,13 +22,15 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.TermQuery;
 import org.eclipse.rdf4j.query.TupleQueryResult;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 import static com.beligum.blocks.filesystem.index.SesamePageIndexConnection.SPARQL_OBJECT_BINDING_NAME;
 import static com.beligum.blocks.filesystem.index.SesamePageIndexConnection.SPARQL_SUBJECT_BINDING_NAME;
@@ -272,71 +273,101 @@ public class Controller extends DefaultTemplateController
 
         return retVal;
     }
-    protected Map<RdfProperty, List<String>> addFieldFilters(List<String> filters, org.apache.lucene.search.BooleanQuery query, Locale locale) throws IOException, ParseException
+    protected void addFieldFilters(List<String> filters, org.apache.lucene.search.BooleanQuery query, Locale locale) throws IOException, ParseException
     {
-        //TODO it probably makes sense to activate this (working code!) for some cases;
-        // eg if the filter-field is a boolean with value 'false', you may want to include the entries without such a field at all too
-        boolean includeNonExisting = false;
-
-        Map<RdfProperty, List<String>> retVal = new LinkedHashMap<>();
-
         if (filters != null) {
             for (String filter : filters) {
                 if (!StringUtils.isEmpty(filter)) {
                     String[] keyVal = filter.split(SEARCH_PARAM_FILTER_DELIM);
 
                     if (keyVal.length == 2) {
-                        RdfProperty key = (RdfProperty) RdfFactory.getForResourceType(URI.create(keyVal[0]));
-                        if (key != null) {
+                        RdfProperty rdfProperty = (RdfProperty) RdfFactory.getForResourceType(URI.create(keyVal[0]));
+                        if (rdfProperty != null) {
                             //prepare the raw value for lookup in the index
-                            Object val = key.prepareIndexValue(keyVal[1], locale);
+                            Object val = rdfProperty.prepareIndexValue(keyVal[1], locale);
 
-                            String valStr = val == null ? null : val.toString();
-                            if (!StringUtils.isEmpty(valStr)) {
-                                //TODO if you want to use this: make sure you rewrite the term query first (see else())
-                                if (includeNonExisting) {
-                                    //the following is the Lucene logic for: if you find a field, it should match x, but if you don't find such a field, include it as well
-                                    String fieldName = key.getCurieName().toString();
-                                    org.apache.lucene.search.BooleanQuery subQuery = new org.apache.lucene.search.BooleanQuery();
-                                    subQuery.add(new TermQuery(new Term(fieldName, valStr)), BooleanClause.Occur.SHOULD);
-
-                                    //see https://kb.ucla.edu/articles/pure-negation-query-in-lucene
-                                    //and https://wiki.apache.org/lucene-java/LuceneFAQ#How_does_one_determine_which_documents_do_not_have_a_certain_term.3F
-                                    org.apache.lucene.search.BooleanQuery fakeNegationQuery = new org.apache.lucene.search.BooleanQuery();
-                                    fakeNegationQuery.add(new MatchAllDocsQuery(), BooleanClause.Occur.MUST);
-                                    fakeNegationQuery.add(new TermQuery(new Term(LucenePageIndexer.CUSTOM_FIELD_FIELDS, fieldName)), BooleanClause.Occur.MUST_NOT);
-                                    subQuery.add(fakeNegationQuery, BooleanClause.Occur.SHOULD);
-
-                                    query.add(subQuery, BooleanClause.Occur.FILTER);
+                            //Right now, we have three main categories of values:
+                            // - numbers (with different precision)
+                            // - string (constant or not)
+                            // - URIs
+                            String field = rdfProperty.getCurieName().toString();
+                            if (val instanceof Number) {
+                                NumericRangeQuery q;
+                                if (val instanceof Double) {
+                                    Double valDouble = (Double) val;
+                                    q = NumericRangeQuery.newDoubleRange(field, valDouble, valDouble, true, true);
                                 }
+                                else if (val instanceof Float) {
+                                    Float valFloat = (Float) val;
+                                    q = NumericRangeQuery.newFloatRange(field, valFloat, valFloat, true, true);
+                                }
+                                else if (val instanceof Long) {
+                                    Long valLong = (Long) val;
+                                    q = NumericRangeQuery.newLongRange(field, valLong, valLong, true, true);
+                                }
+                                //we'll assume all other numbers can be cast to an Integer, hope that's OK
                                 else {
-                                    //This is old code we keep as a reference, but in some cases, it didn't work as expected.
-                                    //Since we have good reindexing code now, we can easily reindex everything, so the term query works as expected.
-                                    //                                    if (key.getDataType().equals(XSD.STRING)
-                                    //                                        || key.getDataType().equals(XSD.NORMALIZED_STRING)
-                                    //                                        || key.getDataType().equals(RDF.LANGSTRING)
-                                    //                                        || key.getDataType().equals(RDF.HTML)) {
-                                    //
-                                    //                                        //TODO as long as we haven't re-indexed everything after 20/03/17 (to index strings as constants too), we have to use this for strings
-                                    //                                        //this is a text-indexed alternative to the (more exact) term query below
-                                    //                                        ComplexPhraseQueryParser queryParser = new ComplexPhraseQueryParser(key.getCurieName().toString(), LucenePageIndexer.DEFAULT_ANALYZER);
-                                    //                                        queryParser.setInOrder(true);
-                                    //
-                                    //                                        String valStrEsc = LucenePageIndexer.removeEscapedChars(valStr, "");
-                                    //
-                                    //                                        query.add(queryParser.parse("\"" + valStr + "\""), BooleanClause.Occur.FILTER);
-                                    //                                    }
-                                    //                                    else {
-                                    query.add(new TermQuery(new Term(key.getCurieName().toString(), valStr)), BooleanClause.Occur.FILTER);
-                                    //                                    }
+                                    Integer valInteger = (Integer) val;
+                                    q = NumericRangeQuery.newIntRange(field, valInteger, valInteger, true, true);
                                 }
 
-                                List<String> values = retVal.get(key);
-                                if (values == null) {
-                                    retVal.put(key, values = new ArrayList<>());
-                                }
-                                values.add(valStr);
+                                query.add(q, BooleanClause.Occur.FILTER);
                             }
+                            else if (val instanceof URI) {
+                                query.add(new TermQuery(new Term(field, String.valueOf(val))), BooleanClause.Occur.FILTER);
+                            }
+                            else {
+                                query.add(new TermQuery(new Term(field, String.valueOf(val))), BooleanClause.Occur.FILTER);
+                            }
+
+                            // eg if the filter-field is a boolean with value 'false',
+                            // you may want to include the entries without such a field at all too
+                            //                            String valStr = val == null ? null : val.toString();
+                            //                            if (!StringUtils.isEmpty(valStr)) {
+                            //                                //TODO if you want to use this: make sure you rewrite the term query first (see else())
+                            //                                if (includeNonExisting) {
+                            //                                    //the following is the Lucene logic for: if you find a field, it should match x, but if you don't find such a field, include it as well
+                            //                                    String fieldName = rdfProperty.getCurieName().toString();
+                            //                                    org.apache.lucene.search.BooleanQuery subQuery = new org.apache.lucene.search.BooleanQuery();
+                            //                                    subQuery.add(new TermQuery(new Term(fieldName, valStr)), BooleanClause.Occur.SHOULD);
+                            //
+                            //                                    //see https://kb.ucla.edu/articles/pure-negation-query-in-lucene
+                            //                                    //and https://wiki.apache.org/lucene-java/LuceneFAQ#How_does_one_determine_which_documents_do_not_have_a_certain_term.3F
+                            //                                    org.apache.lucene.search.BooleanQuery fakeNegationQuery = new org.apache.lucene.search.BooleanQuery();
+                            //                                    fakeNegationQuery.add(new MatchAllDocsQuery(), BooleanClause.Occur.MUST);
+                            //                                    fakeNegationQuery.add(new TermQuery(new Term(LucenePageIndexer.CUSTOM_FIELD_FIELDS, fieldName)), BooleanClause.Occur.MUST_NOT);
+                            //                                    subQuery.add(fakeNegationQuery, BooleanClause.Occur.SHOULD);
+                            //
+                            //                                    query.add(subQuery, BooleanClause.Occur.FILTER);
+                            //                                }
+                            //                                else {
+                            //                                    //This is old code we keep as a reference, but in some cases, it didn't work as expected.
+                            //                                    //Since we have good reindexing code now, we can easily reindex everything, so the term query works as expected.
+                            //                                    //                                    if (key.getDataType().equals(XSD.STRING)
+                            //                                    //                                        || key.getDataType().equals(XSD.NORMALIZED_STRING)
+                            //                                    //                                        || key.getDataType().equals(RDF.LANGSTRING)
+                            //                                    //                                        || key.getDataType().equals(RDF.HTML)) {
+                            //                                    //
+                            //                                    //                                        //TODO as long as we haven't re-indexed everything after 20/03/17 (to index strings as constants too), we have to use this for strings
+                            //                                    //                                        //this is a text-indexed alternative to the (more exact) term query below
+                            //                                    //                                        ComplexPhraseQueryParser queryParser = new ComplexPhraseQueryParser(key.getCurieName().toString(), LucenePageIndexer.DEFAULT_ANALYZER);
+                            //                                    //                                        queryParser.setInOrder(true);
+                            //                                    //
+                            //                                    //                                        String valStrEsc = LucenePageIndexer.removeEscapedChars(valStr, "");
+                            //                                    //
+                            //                                    //                                        query.add(queryParser.parse("\"" + valStr + "\""), BooleanClause.Occur.FILTER);
+                            //                                    //                                    }
+                            //                                    //                                    else {
+                            //                                    query.add(new TermQuery(new Term(rdfProperty.getCurieName().toString(), valStr)), BooleanClause.Occur.FILTER);
+                            //                                    //                                    }
+                            //                                }
+                            //
+                            //                                List<String> values = retVal.get(rdfProperty);
+                            //                                if (values == null) {
+                            //                                    retVal.put(rdfProperty, values = new ArrayList<>());
+                            //                                }
+                            //                                values.add(valStr);
+                            //                            }
                         }
                         else {
                             Logger.warn("Encountered unknown RDF property in search filter; ignoring filter" + filter);
@@ -348,8 +379,6 @@ public class Controller extends DefaultTemplateController
                 }
             }
         }
-
-        return retVal;
     }
     /**
      * Returns a list of all distinct possible values for the given filter in the current language
