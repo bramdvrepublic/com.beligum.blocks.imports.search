@@ -46,7 +46,8 @@ public class Controller extends DefaultTemplateController
     //-----CONSTANTS-----
     public static final int FIRST_PAGE_INDEX = 0;
     public static final int DEFAULT_PAGE_SIZE = 10;
-    public static final int MAX_PAGE_SIZE = 100;
+    //sync this with results.js
+    public static final int MAX_PAGE_SIZE = 1000;
 
     public enum CacheKeys implements CacheKey
     {

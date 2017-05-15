@@ -166,6 +166,7 @@ base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.
                         value: 500
                     },
                     {
+                        //Note: sync this max value with the MAX_PAGE_SIZE in the Controller
                         name: 1000,
                         value: 1000
                     }
