@@ -89,7 +89,7 @@ public class Controller extends DefaultTemplateController
 
         if (searchRequest.getSortField() == null) {
             RdfProperty sortField = null;
-            String sortParam = this.getQueryParam(SEARCH_PARAM_SORT);
+            String sortParam = this.getParam(SEARCH_PARAM_SORT, SEARCH_BOX_SORT_ARG, null);
             if (!StringUtils.isEmpty(sortParam)) {
                 sortField = (RdfProperty) RdfFactory.getForResourceType(URI.create(sortParam));
             }
@@ -98,7 +98,7 @@ public class Controller extends DefaultTemplateController
         }
 
         if (searchRequest.getSortDescending() == null) {
-            String descParam = this.getQueryParam(SEARCH_PARAM_SORT_DESC);
+            String descParam = this.getParam(SEARCH_PARAM_SORT_DESC, SEARCH_BOX_DESC_ARG, null);
             if (!StringUtils.isEmpty(descParam)) {
                 searchRequest.setSortDescending(Boolean.valueOf(descParam));
             }
@@ -590,6 +590,12 @@ public class Controller extends DefaultTemplateController
 
         if (onlyLiteral) {
             retVal.append(" && isLiteral(?").append(binding).append(")");
+        }
+        else {
+            //this will also add the not-literal entities (that don't have a language and don't seem to be selected by the " = ''" above) if arguments allow it
+            if (filterLang == FilterLang.NOLANG || filterLang == FilterLang.BOTH) {
+                retVal.append(" || !isLiteral(?").append(binding).append(")");
+            }
         }
         retVal.append(")\n");
 
