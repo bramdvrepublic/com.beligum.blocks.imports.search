@@ -204,7 +204,7 @@ public class Controller extends DefaultTemplateController
                 }
 
                 if (!StringUtils.isEmpty(searchRequest.getSearchTerm())) {
-                    pageQuery.add(queryConnection.buildWildcardQuery(null, searchRequest.getSearchTerm(), false), BooleanClause.Occur.MUST);
+                    pageQuery.add(queryConnection.buildWildcardQuery(null, searchRequest.getSearchTerm()), BooleanClause.Occur.MUST);
                 }
 
                 //this.searchResult = StorageFactory.getTriplestoreQueryConnection().search(rdfClass, searchTerm, new HashMap<RdfProperty, String>(), sortField, false, RESOURCES_ON_PAGE, selectedPage, this.getSearchLanguage());

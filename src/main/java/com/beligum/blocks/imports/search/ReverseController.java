@@ -79,7 +79,7 @@ public class ReverseController extends Controller
                     org.apache.lucene.search.BooleanQuery pageQuery = new org.apache.lucene.search.BooleanQuery();
 
                     //Note: the URIs are indexed relatively (as opposed to the SPARQL endpoint)
-                    pageQuery.add(new TermQuery(new Term(LucenePageIndexer.CUSTOM_FIELD_ALL, indexedPage.getResource())), BooleanClause.Occur.FILTER);
+                    pageQuery.add(new TermQuery(new Term(LucenePageIndexer.CUSTOM_FIELD_ALL_CONSTANT, indexedPage.getResource())), BooleanClause.Occur.FILTER);
 
                     //makes sense not to return all languages this resource appears in (or we'll have a lot of doubles)
                     Locale locale = R.i18n().getOptimalLocale();
