@@ -8,6 +8,7 @@ import com.beligum.blocks.config.RdfFactory;
 import com.beligum.blocks.config.Settings;
 import com.beligum.blocks.config.StorageFactory;
 import com.beligum.blocks.endpoints.ifaces.RdfQueryEndpoint;
+import com.beligum.blocks.filesystem.index.LucenePageIndexer;
 import com.beligum.blocks.filesystem.index.entries.pages.IndexSearchRequest;
 import com.beligum.blocks.filesystem.index.entries.pages.IndexSearchResult;
 import com.beligum.blocks.filesystem.index.entries.pages.PageIndexEntry;
@@ -315,10 +316,18 @@ public class Controller extends DefaultTemplateController
                                 query.add(q, BooleanClause.Occur.FILTER);
                             }
                             else if (val instanceof URI) {
+                                //URIs are indexed as constant fields, so we can just look it up
                                 query.add(new TermQuery(new Term(field, String.valueOf(val))), BooleanClause.Occur.FILTER);
                             }
                             else {
-                                query.add(new TermQuery(new Term(field, String.valueOf(val))), BooleanClause.Occur.FILTER);
+                                String valStr = String.valueOf(val);
+
+                                //Here, we assume we don't know how the field was indexed (analyzed or verbatim), so it makes sense to include both and OR them together
+                                org.apache.lucene.search.BooleanQuery termQuery = new org.apache.lucene.search.BooleanQuery();
+                                termQuery.add(new TermQuery(new Term(field, valStr)), BooleanClause.Occur.SHOULD);
+                                termQuery.add(new TermQuery(new Term(LucenePageIndexer.buildVerbatimFieldName(field), valStr)), BooleanClause.Occur.SHOULD);
+
+                                query.add(termQuery, BooleanClause.Occur.FILTER);
                             }
 
                             // eg if the filter-field is a boolean with value 'false',
