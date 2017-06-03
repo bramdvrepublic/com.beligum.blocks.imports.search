@@ -13,7 +13,7 @@
             #else
                 $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDescription, 0, $lastIndex)
             #end
-            <span class="total-hits">$TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsTitle, $CONTROLLER.searchResult.totalHits) $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDuration, $CONTROLLER.searchResult.searchDurationSeconds)</span>
+            <span class="total-hits">$TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsTitle, $CONTROLLER.searchResult.totalHits)</span>
         #else
             $MESSAGES.blocks.imports.search.boxResultsTitleEmpty
         #end
