@@ -7,7 +7,7 @@
             #set($lastIndex = $CONTROLLER.searchResult.totalHits)
         #end
 
-        #if($CONTROLLER.searchResult.results && !$CONTROLLER.searchResult.results.empty)
+        #if(!$CONTROLLER.searchResult.empty)
             #if($lastIndex > 0)
                 $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDescription, $firstIndex, $lastIndex)
             #else
@@ -19,25 +19,26 @@
         #end
     </div>
     <div class="panel-body">
-        #set($maxPageFloat = $CONTROLLER.searchResult.totalHits / $CONTROLLER.searchResult.pageSize)
-        #set($maxPageInt = $TOOLKIT.math.ceil($maxPageFloat))
+        ##This is the maximum index we can allow
+        ##Note: minus one because the page index is zero based
+        #set($maxPageIdx = $TOOLKIT.math.ceil($TOOLKIT.math.div($CONTROLLER.searchResult.totalHits, $CONTROLLER.searchResult.pageSize)) - 1)
 
     ## Only enable pagination if we have more than one page to show
-        #if($maxPageInt > 1)
+        #if($maxPageIdx > 0)
             <nav class="top">
                 #parse('/templates/search/pager.html')
             </nav>
         #end
         <div class="results list-group">
-            #if(!$CONTROLLER.searchResult.results || $CONTROLLER.searchResult.results.empty)
-                <span class="list-group-item empty">$MESSAGES.blocks.imports.search.boxResultsEmpty</span>
-            #else
-                #foreach($result in $CONTROLLER.searchResult.results)
+            #if(!$CONTROLLER.searchResult.empty)
+                #foreach($result in $CONTROLLER.searchResult)
                     #parse('/templates/search/result.html')
                 #end
+            #else
+                <span class="list-group-item empty">$MESSAGES.blocks.imports.search.boxResultsEmpty</span>
             #end
         </div>
-        #if($maxPageInt > 1)
+        #if($maxPageIdx > 0)
             <nav class="bottom">
                 #parse('/templates/search/pager.html')
             </nav>

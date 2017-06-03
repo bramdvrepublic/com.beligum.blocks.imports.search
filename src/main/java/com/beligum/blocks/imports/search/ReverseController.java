@@ -8,6 +8,7 @@ import com.beligum.blocks.filesystem.index.LucenePageIndexer;
 import com.beligum.blocks.filesystem.index.entries.pages.IndexSearchRequest;
 import com.beligum.blocks.filesystem.index.entries.pages.IndexSearchResult;
 import com.beligum.blocks.filesystem.index.entries.pages.PageIndexEntry;
+import com.beligum.blocks.filesystem.index.entries.pages.SimpleIndexSearchResult;
 import com.beligum.blocks.filesystem.index.ifaces.PageIndexConnection;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause;
@@ -71,7 +72,7 @@ public class ReverseController extends Controller
                 PageIndexConnection pageIndexConnection = StorageFactory.getMainPageIndexer().connect(null);
 
                 //let's not return nulls, so we can always use .size() and so on
-                IndexSearchResult searchResult = new IndexSearchResult(new ArrayList<>());
+                IndexSearchResult searchResult = new SimpleIndexSearchResult(new ArrayList<>());
 
                 //note: this will return null on a newly created page
                 PageIndexEntry indexedPage = pageIndexConnection.get(requestedUri);

@@ -21,8 +21,9 @@
     #end
 
 ## the previous page
-    #if($CONTROLLER.searchResult.pageIndex > 0)
-        #set($index=$CONTROLLER.searchResult.pageIndex - 1)
+    #set($index=$CONTROLLER.searchResult.pageIndex - 1)
+## Note: we don't print the previous button if it's the 'same' as the first button
+    #if($CONTROLLER.searchResult.pageIndex > 0 && $index != 0)
         #set($link=$REQUEST.getUriInfo().getRequestUriBuilder().replaceQueryParam($CONSTANTS.blocks.imports.search.SEARCH_PARAM_INDEX, $index))
         <li class="previous"><a href="$link">
             #if($useIcons)
@@ -43,35 +44,35 @@
         #end
     #end
 
-    #set($pagerSize=$TOOLKIT.math.toInteger($CONSTANTS.blocks.imports.search.SEARCH_PAGER_SIZE))
-    #set($halfPagerSize=$TOOLKIT.math.floor($TOOLKIT.math.div($pagerSize, 2)))
+    ##Note: we assume $maxPageIdx is set by the parent template
 
-    #set($startPage=$CONTROLLER.searchResult.pageIndex - $halfPagerSize)
-    #set($endPage=$CONTROLLER.searchResult.pageIndex + $halfPagerSize)
+    #set($PAGE_WINDOW_SIZE=10)
+    #set($halfPageSize=$TOOLKIT.math.floor($TOOLKIT.math.div($PAGE_WINDOW_SIZE, 2)))
+    #set($startPageIdx=$CONTROLLER.searchResult.pageIndex - $halfPageSize)
+    #set($endPageIdx=$CONTROLLER.searchResult.pageIndex + $halfPageSize)
 
 ## on top of the left and right part, we always have the current page, so advance the left half one more (to show more of what's coming) if the size is even
-    #if (($halfPagerSize*2)==$pagerSize)
-        #set($startPage=$startPage+1)
+    #if ($TOOLKIT.math.mul($halfPageSize, 2)==$PAGE_WINDOW_SIZE)
+        #set($startPageIdx=$startPageIdx+1)
     #end
 
-    #if ($startPage<0)
+    #if ($startPageIdx<0)
     ## end calculations are off now; adjust them before setting to final value (minus a negative number is plus)
-        #set($endPage=$endPage - $startPage)
-
-        #set($startPage=0)
+        #set($endPageIdx=$endPageIdx - $startPageIdx)
+        #set($startPageIdx=0)
     #end
 
-    #if ($endPage>$maxPageInt)
+    #if ($endPageIdx>$maxPageIdx)
     ## start calculations are off now; adjust them before setting to final value
-        #set($startPage=$startPage - ($endPage - $maxPageInt))
-        #if ($startPage<0)
-            #set($startPage=0)
+        #set($startPageIdx=$startPageIdx - ($endPageIdx - $maxPageIdx))
+        #if ($startPageIdx<0)
+            #set($startPageIdx=0)
         #end
 
-        #set($endPage=$maxPageInt)
+        #set($endPageIdx=$maxPageIdx)
     #end
 
-    #foreach($i in [$startPage..$endPage])
+    #foreach($i in [$startPageIdx..$endPageIdx])
     ## Note: zero-based index
         #set($index=$i)
         #set($link=$REQUEST.getUriInfo().getRequestUriBuilder().replaceQueryParam($CONSTANTS.blocks.imports.search.SEARCH_PARAM_INDEX, $index))
@@ -85,7 +86,7 @@
 
 ## the last page (this is a double of the one below to activate in xs mode because the order is reversed because of float right)
     #if($CONTROLLER.searchResult.totalHits > $lastIndex)
-        #set($link=$REQUEST.getUriInfo().getRequestUriBuilder().replaceQueryParam($CONSTANTS.blocks.imports.search.SEARCH_PARAM_INDEX, $maxPageInt))
+        #set($link=$REQUEST.getUriInfo().getRequestUriBuilder().replaceQueryParam($CONSTANTS.blocks.imports.search.SEARCH_PARAM_INDEX, $maxPageIdx))
         <li class="last last-float"><a href="$link">
             #if($useIcons)
                 <i class="fa fa-angle-double-right"></i>
@@ -106,8 +107,9 @@
     #end
 
 ## the next page
-    #if($CONTROLLER.searchResult.totalHits > $lastIndex)
-        #set($index=$CONTROLLER.searchResult.pageIndex + 1)
+    #set($index=$CONTROLLER.searchResult.pageIndex + 1)
+    ## Note: we don't print the next button if it's the 'same' as the last button
+    #if($CONTROLLER.searchResult.totalHits > $lastIndex && $index != $maxPageIdx)
         #set($link=$REQUEST.getUriInfo().getRequestUriBuilder().replaceQueryParam($CONSTANTS.blocks.imports.search.SEARCH_PARAM_INDEX, $index))
         <li class="next"><a href="$link">
             #if($useIcons)
@@ -130,7 +132,7 @@
 
 ## the last page
     #if($CONTROLLER.searchResult.totalHits > $lastIndex)
-        #set($link=$REQUEST.getUriInfo().getRequestUriBuilder().replaceQueryParam($CONSTANTS.blocks.imports.search.SEARCH_PARAM_INDEX, $maxPageInt))
+        #set($link=$REQUEST.getUriInfo().getRequestUriBuilder().replaceQueryParam($CONSTANTS.blocks.imports.search.SEARCH_PARAM_INDEX, $maxPageIdx))
         <li class="last"><a href="$link">
             #if($useIcons)
                 <i class="fa fa-angle-double-right"></i>

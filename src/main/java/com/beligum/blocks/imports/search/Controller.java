@@ -12,6 +12,7 @@ import com.beligum.blocks.filesystem.index.LucenePageIndexer;
 import com.beligum.blocks.filesystem.index.entries.pages.IndexSearchRequest;
 import com.beligum.blocks.filesystem.index.entries.pages.IndexSearchResult;
 import com.beligum.blocks.filesystem.index.entries.pages.PageIndexEntry;
+import com.beligum.blocks.filesystem.index.entries.pages.SimpleIndexSearchResult;
 import com.beligum.blocks.filesystem.index.ifaces.LuceneQueryConnection;
 import com.beligum.blocks.filesystem.index.ifaces.RdfTupleResult;
 import com.beligum.blocks.filesystem.index.results.AutoTupleRdfResult;
@@ -171,7 +172,7 @@ public class Controller extends DefaultTemplateController
         if (!R.cacheManager().getRequestCache().containsKey(SEARCH_RESULT)) {
 
             //let's not return nulls, so we can always use .size() and so on
-            IndexSearchResult searchResult = new IndexSearchResult(new ArrayList<>());
+            IndexSearchResult searchResult = new SimpleIndexSearchResult(new ArrayList<>());
             try {
                 IndexSearchRequest searchRequest = this.getSearchRequest();
                 Locale locale = this.getSearchLanguage();
