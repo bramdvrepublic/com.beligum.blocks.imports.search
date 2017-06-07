@@ -1,15 +1,21 @@
-#if(!$CONTROLLER.searchResult.empty)
-    #foreach($result in $CONTROLLER.searchResult)
-        <div class="col-md-4">
-            <a href="$result.id" title="$result.title" class="thumbnail">
+<div class="results">
+    #if(!$CONTROLLER.searchResult.empty)
+        #foreach($result in $CONTROLLER.searchResult)
+            <div class="col-md-4">
+                #set($escTitle=$TOOLKIT.esc.html($result.title))
+                <a href="$result.id" title="$escTitle" class="thumbnail">
                 ##Note: we need the extra space after the URIs for correct fingerprinting
-                <img src="#if($result.image)$result.image #{else}/assets/images/imports/blocks-image/placeholder_image_1.png #{end}" alt="$result.title" />
-                <div class="caption">
-                    <span class="title">$result.title</span>
-                </div>
-            </a>
-        </div>
+                    <img src="#if($result.image)$result.image #{else}/assets/images/imports/blocks-image/placeholder_image_1.png #{end}" alt="$escTitle"/>
+                    <div class="caption">
+                        <span class="title">$result.title</span>
+                    </div>
+                </a>
+            </div>
+        #end
+
+    ##makes the admin dotted line go all the way down
+        <div class="clearfix"></div>
+    #else
+        <span class="empty">$MESSAGES.blocks.imports.search.boxResultsEmpty</span>
     #end
-#else
-<span class="empty">$MESSAGES.blocks.imports.search.boxResultsEmpty</span>
-#end
+</div>

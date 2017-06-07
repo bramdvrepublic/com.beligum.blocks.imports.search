@@ -1,47 +1,11 @@
-<div class="panel panel-default panel-results">
-    <div class="panel-heading">
-    ## Note: zero-based index
-        #set($firstIndex = ($CONTROLLER.searchResult.pageIndex * $CONTROLLER.searchResult.pageSize) + 1)
-        #set($lastIndex = ($CONTROLLER.searchResult.pageIndex * $CONTROLLER.searchResult.pageSize) + $CONTROLLER.searchResult.pageSize)
-        #if($CONTROLLER.searchResult.totalHits < $lastIndex)
-            #set($lastIndex = $CONTROLLER.searchResult.totalHits)
-        #end
 
-        #if(!$CONTROLLER.searchResult.empty)
-            #if($lastIndex > 0)
-                $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDescription, $firstIndex, $lastIndex)
-            #else
-                $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDescription, 0, $lastIndex)
-            #end
-            <span class="total-hits">$TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsTitle, $CONTROLLER.searchResult.totalHits)</span>
-        #else
-            $MESSAGES.blocks.imports.search.boxResultsTitleEmpty
+<div class="results list-group">
+    #if(!$CONTROLLER.searchResult.empty)
+        #foreach($result in $CONTROLLER.searchResult)
+            #parse('/templates/search/result.html')
         #end
-    </div>
-    <div class="panel-body">
-        ##This is the maximum index we can allow
-        ##Note: minus one because the page index is zero based
-        #set($maxPageIdx = $TOOLKIT.math.ceil($TOOLKIT.math.div($CONTROLLER.searchResult.totalHits, $CONTROLLER.searchResult.pageSize)) - 1)
-
-    ## Only enable pagination if we have more than one page to show
-        #if($maxPageIdx > 0)
-            <nav class="top">
-                #parse('/templates/search/pager.html')
-            </nav>
-        #end
-        <div class="results list-group">
-            #if(!$CONTROLLER.searchResult.empty)
-                #foreach($result in $CONTROLLER.searchResult)
-                    #parse('/templates/search/result.html')
-                #end
-            #else
-                <span class="list-group-item empty">$MESSAGES.blocks.imports.search.boxResultsEmpty</span>
-            #end
-        </div>
-        #if($maxPageIdx > 0)
-            <nav class="bottom">
-                #parse('/templates/search/pager.html')
-            </nav>
-        #end
-    </div>
+    #else
+        <span class="list-group-item empty">$MESSAGES.blocks.imports.search.boxResultsEmpty</span>
+    #end
 </div>
+

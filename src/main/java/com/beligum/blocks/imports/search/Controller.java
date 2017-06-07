@@ -147,6 +147,22 @@ public class Controller extends DefaultTemplateController
 
             searchRequest.setFormat(format);
         }
+
+        if (searchRequest.getHideHeader() == null) {
+            String resultsHideHeaderConfig = this.config.get(SEARCH_RESULTS_HIDE_HEADER_ARG);
+            if (!StringUtils.isEmpty(resultsHideHeaderConfig)) {
+                searchRequest.setHideHeader(Boolean.parseBoolean(resultsHideHeaderConfig));
+            }
+        }
+
+        if (searchRequest.getHidePager() == null) {
+            String resultsHidePagerConfig = this.config.get(SEARCH_RESULTS_HIDE_PAGER_ARG);
+            if (!StringUtils.isEmpty(resultsHidePagerConfig)) {
+                searchRequest.setHidePager(Boolean.parseBoolean(resultsHidePagerConfig));
+            }
+
+
+        }
     }
 
     //-----PUBLIC METHODS-----
@@ -681,6 +697,14 @@ public class Controller extends DefaultTemplateController
             }
 
             return this.cachedProperty;
+        }
+        /**
+         * We had some issues with referrer locales being used instead of the normal locale (because that's the behavior of RdfClass.getLabel()),
+         * so we're forcing the locale to make sure the right one is used.
+         */
+        public String getPropertyLabel()
+        {
+            return this.getProperty().getLabelMessage().toString(R.i18n().getOptimalLocale());
         }
 
         //-----PRIVATE METHODS-----

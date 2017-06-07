@@ -29,6 +29,9 @@ blocks-search-results {
     }
     .panel-body {
       .results {
+        //override bootstrap list-group default
+        margin-bottom: 0;
+
         .empty {
           font-style: italic;
           text-align: center;
@@ -44,6 +47,10 @@ blocks-search-results {
           padding: @BLOCK_PADDING;
           margin: 0;
           margin-bottom: 10px;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
 
           @IMG_WIDTH: 60px;
           .media {
@@ -192,8 +199,8 @@ blocks-search-results {
       // (actually meaning we have 100% for the image and 20% for the caption)
       //see http://andyshora.com/css-image-container-padding-hack.html
 
-      //note: this controls the space below the img
-      padding-bottom: 121%;
+      //note: this more or less controls the height of the image
+      padding-bottom: 80%;
       overflow: hidden;
       position: relative;
 
@@ -204,6 +211,10 @@ blocks-search-results {
         right: @imgMargin;
         left: @imgMargin;
         width: 100%-(2*@imgMargin);
+
+        //make the image fill the entire surface of the parent
+        height: 100%;
+        object-fit: cover;
       }
       .caption {
 
@@ -211,6 +222,9 @@ blocks-search-results {
         left: 0;
         right: 0;
         bottom: 0;
+
+        //this will make sure the image never obscures the text
+        background-color: #ffffff;
 
         //the margin top is now actually controlled by
         // the (extra than 100%) padding-bottom of the a above

@@ -42,7 +42,7 @@
                         #foreach($filter in $searchConfig.filters)
                             <div class="form-group $CONSTANTS.blocks.imports.search.SEARCH_BOX_FILTER_CLASS">
                                 #set($id='search-filter-'+($foreach.index + 1))
-                                <label for="$id">$TOOLKIT.display.capitalize($filter.property.label)</label>
+                                <label for="$id">$TOOLKIT.display.capitalize($filter.propertyLabel)</label>
                                 <select id="$id" name="$CONSTANTS.blocks.imports.search.SEARCH_PARAM_FILTER" class="form-control">
                                 ## This is the empty selection
                                     <option value=""></option>

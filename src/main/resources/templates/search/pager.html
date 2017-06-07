@@ -77,6 +77,9 @@
         #set($index=$i)
         #set($link=$REQUEST.getUriInfo().getRequestUriBuilder().replaceQueryParam($CONSTANTS.blocks.imports.search.SEARCH_PARAM_INDEX, $index))
         #set($label=$i + 1)
+        #if (($index==$startPageIdx && $index>0) || ($index==$endPageIdx && $index<$maxPageIdx))
+            #set($label="...")
+        #end
         #if ($index==$CONTROLLER.searchResult.pageIndex)
             <li class="active"><a href="$link">$label</a></li>
         #else

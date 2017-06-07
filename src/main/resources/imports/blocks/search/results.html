@@ -12,16 +12,61 @@
 <script src="/assets/scripts/imports/blocks-search/results.js" type="application/javascript" data-scope-role="admin"></script>
 
 <template>
-    ## Note: default format is the list
-    #if (!$CONTROLLER.searchRequest.format)
-        #parse('/templates/search/results/list.html')
-    #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_LIST)
-        #parse('/templates/search/results/list.html')
-    #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_LETTERS)
-        #parse('/templates/search/results/letters.html')
-    #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_IMAGES)
-        #parse('/templates/search/results/images.html')
-    #else
-        $TOOLKIT.display.message($MESSAGES.blocks.imports.search.resultsFormatUnknown, $CONTROLLER.searchRequest.format)
-    #end
+    <div class="panel panel-default panel-results">
+        #if (!$CONTROLLER.searchRequest.hideHeader)
+            <div class="panel-heading">
+            ## Note: zero-based index
+                #set($firstIndex = ($CONTROLLER.searchResult.pageIndex * $CONTROLLER.searchResult.pageSize) + 1)
+                #set($lastIndex = ($CONTROLLER.searchResult.pageIndex * $CONTROLLER.searchResult.pageSize) + $CONTROLLER.searchResult.pageSize)
+                #if($CONTROLLER.searchResult.totalHits < $lastIndex)
+                    #set($lastIndex = $CONTROLLER.searchResult.totalHits)
+                #end
+
+                #if(!$CONTROLLER.searchResult.empty)
+                    #if($lastIndex > 0)
+                        $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDescription, $firstIndex, $lastIndex)
+                    #else
+                        $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDescription, 0, $lastIndex)
+                    #end
+                    <span class="total-hits">$TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsTitle, $CONTROLLER.searchResult.totalHits)</span>
+                #else
+                    $MESSAGES.blocks.imports.search.boxResultsTitleEmpty
+                #end
+            </div>
+        #end
+
+        <div class="panel-body">
+
+        ##This is the maximum index we can allow
+        ##Note: minus one because the page index is zero based
+            #set($maxPageIdx = $TOOLKIT.math.ceil($TOOLKIT.math.div($CONTROLLER.searchResult.totalHits, $CONTROLLER.searchResult.pageSize)) - 1)
+
+        ## Only enable pagination if we have more than one page to show
+            #if($maxPageIdx > 0 && !$CONTROLLER.searchRequest.hidePager)
+                <nav class="top">
+                    #parse('/templates/search/pager.html')
+                </nav>
+            #end
+
+        ## Note: default format is the list
+            #if (!$CONTROLLER.searchRequest.format)
+                #parse('/templates/search/results/list.html')
+            #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_LIST)
+                #parse('/templates/search/results/list.html')
+            #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_LETTERS)
+                #parse('/templates/search/results/letters.html')
+            #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_IMAGES)
+                #parse('/templates/search/results/images.html')
+            #else
+                $TOOLKIT.display.message($MESSAGES.blocks.imports.search.resultsFormatUnknown, $CONTROLLER.searchRequest.format)
+            #end
+
+            #if($maxPageIdx > 0 && !$CONTROLLER.searchRequest.hidePager)
+                <nav class="bottom">
+                    #parse('/templates/search/pager.html')
+                </nav>
+            #end
+
+        </div>
+    </div>
 </template>

@@ -172,6 +172,9 @@ base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.
                     }
                 ], null));
 
+            retVal.push(this.addOptionalClass(Sidebar, block.element, SearchMessages.boxResultsHideHeader, null, null, SearchConstants.SEARCH_RESULTS_HIDE_HEADER_ARG));
+            retVal.push(this.addOptionalClass(Sidebar, block.element, SearchMessages.boxResultsHidePager, null, null, SearchConstants.SEARCH_RESULTS_HIDE_PAGER_ARG));
+
             return retVal;
         },
         getWindowName: function ()

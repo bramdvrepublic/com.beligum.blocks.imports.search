@@ -19,11 +19,9 @@
     ## Note: default format is the list
         #if (!$CONTROLLER.searchRequest.format || $CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_LIST)
 
-            #if(!$CONTROLLER.searchResult.results || $CONTROLLER.searchResult.results.empty)
-                <span class="empty">$MESSAGES.blocks.imports.search.boxResultsEmpty</span>
-            #else
+            #if(!$CONTROLLER.searchResult.empty)
                 <ul>
-                    #foreach($result in $CONTROLLER.searchResult.results)
+                    #foreach($result in $CONTROLLER.searchResult)
                         <li>
                             <a href="$result.id">
                                 $!result.getTitle()
@@ -31,6 +29,8 @@
                         </li>
                     #end
                 </ul>
+            #else
+                <span class="empty">$MESSAGES.blocks.imports.search.boxResultsEmpty</span>
             #end
 
         #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_LETTERS)
