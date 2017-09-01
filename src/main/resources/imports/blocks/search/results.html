@@ -4,12 +4,12 @@
 <meta property="blocks:controller" content="com.beligum.blocks.imports.search.Controller">
 
 ## PUBLIC STYLES
-<link rel="stylesheet" href="/assets/styles/imports/blocks-search/results.less">
+<link rel="stylesheet" href="/assets/blocks/imports/search/styles/results.less">
 
 ## ADMIN SCRIPTS
 <script src="/constants/blocks/imports/search?type=js" type="application/javascript" data-scope-role="admin"></script>
 <script src="/messages/blocks/imports/search?type=js" type="application/javascript" data-scope-role="admin"></script>
-<script src="/assets/scripts/imports/blocks-search/results.js" type="application/javascript" data-scope-role="admin"></script>
+<script src="/assets/blocks/imports/search/scripts/results.js" type="application/javascript" data-scope-role="admin"></script>
 
 <template>
     <div class="panel panel-default panel-results">
@@ -44,26 +44,26 @@
         ## Only enable pagination if we have more than one page to show
             #if($maxPageIdx > 0 && !$CONTROLLER.searchRequest.hidePager)
                 <nav class="top">
-                    #parse('/templates/search/pager.html')
+                    #parse('/templates/blocks/imports/search/pager.html')
                 </nav>
             #end
 
         ## Note: default format is the list
             #if (!$CONTROLLER.searchRequest.format)
-                #parse('/templates/search/results/list.html')
+                #parse('/templates/blocks/imports/search/results/list.html')
             #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_LIST)
-                #parse('/templates/search/results/list.html')
+                #parse('/templates/blocks/imports/search/results/list.html')
             #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_LETTERS)
-                #parse('/templates/search/results/letters.html')
+                #parse('/templates/blocks/imports/search/results/letters.html')
             #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_IMAGES)
-                #parse('/templates/search/results/images.html')
+                #parse('/templates/blocks/imports/search/results/images.html')
             #else
                 $TOOLKIT.display.message($MESSAGES.blocks.imports.search.resultsFormatUnknown, $CONTROLLER.searchRequest.format)
             #end
 
             #if($maxPageIdx > 0 && !$CONTROLLER.searchRequest.hidePager)
                 <nav class="bottom">
-                    #parse('/templates/search/pager.html')
+                    #parse('/templates/blocks/imports/search/pager.html')
                 </nav>
             #end
 

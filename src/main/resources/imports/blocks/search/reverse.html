@@ -4,12 +4,12 @@
 <meta property="blocks:controller" content="com.beligum.blocks.imports.search.ReverseController">
 
 ## PUBLIC STYLES
-<link rel="stylesheet" href="/assets/styles/imports/blocks-search/reverse.less">
+<link rel="stylesheet" href="/assets/blocks/imports/search/styles/reverse.less">
 
 ## ADMIN SCRIPTS
 <script src="/constants/blocks/imports/search?type=js" type="application/javascript" data-scope-role="admin"></script>
 <script src="/messages/blocks/imports/search?type=js" type="application/javascript" data-scope-role="admin"></script>
-<script src="/assets/scripts/imports/blocks-search/reverse.js" type="application/javascript" data-scope-role="admin"></script>
+<script src="/assets/blocks/imports/search/scripts/reverse.js" type="application/javascript" data-scope-role="admin"></script>
 
 <template>
     <h4>
@@ -34,9 +34,9 @@
             #end
 
         #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_LETTERS)
-            #parse('/templates/search/results/letters.html')
+            #parse('/templates/blocks/imports/search/results/letters.html')
         #elseif ($CONTROLLER.searchRequest.format==$CONSTANTS.blocks.imports.search.SEARCH_RESULTS_FORMAT_IMAGES)
-            #parse('/templates/search/results/images.html')
+            #parse('/templates/blocks/imports/search/results/images.html')
         #else
             $TOOLKIT.display.message($MESSAGES.blocks.imports.search.resultsFormatUnknown, $CONTROLLER.searchRequest.format)
         #end

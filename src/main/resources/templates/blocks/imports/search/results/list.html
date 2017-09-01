@@ -2,7 +2,7 @@
 <div class="results list-group">
     #if(!$CONTROLLER.searchResult.empty)
         #foreach($result in $CONTROLLER.searchResult)
-            #parse('/templates/search/result.html')
+            #parse('/templates/blocks/imports/search/result.html')
         #end
     #else
         <span class="list-group-item empty">$MESSAGES.blocks.imports.search.boxResultsEmpty</span>
