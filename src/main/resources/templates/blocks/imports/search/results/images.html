@@ -5,7 +5,7 @@
                 #set($escTitle=$TOOLKIT.esc.html($result.title))
                 <a href="$result.id" title="$escTitle" class="thumbnail">
                 ##Note: we need the extra space after the URIs for correct fingerprinting
-                    <img src="#if($result.image)$result.image #{else}/assets/images/blocks/imports/image/placeholder_image_1.png #{end}" alt="$escTitle"/>
+                    <img src="#if($result.image)$result.image #{else}/assets/blocks/imports/image/images/placeholder_image_1.png #{end}" alt="$escTitle"/>
                     <div class="caption">
                         <span class="title">$result.title</span>
                     </div>
