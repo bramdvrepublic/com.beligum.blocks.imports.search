@@ -229,6 +229,10 @@ public class Controller extends DefaultTemplateController
 
                 pageQuery.add(new TermQuery(new Term(PageIndexEntry.Field.language.name(), locale.getLanguage())), BooleanClause.Occur.FILTER);
 
+                //Note: by default, we don't include sub-resources as search results. This might be made configurable in the future, but for now, we filter them out.
+                //Also note that they 'work', eg. the link they generate resolves correctly to it's containing page
+                pageQuery.add(new TermQuery(new Term(PageIndexEntry.Field.parentId.name(), PageIndexEntry.Field.NULL_VALUE)), BooleanClause.Occur.FILTER);
+
                 if (searchRequest.getTypeOf() != null) {
                     pageQuery.add(new TermQuery(new Term(PageIndexEntry.Field.typeOf.name(), searchRequest.getTypeOf().getCurieName().toString())), BooleanClause.Occur.FILTER);
                 }
