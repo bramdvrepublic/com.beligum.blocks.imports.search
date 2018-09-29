@@ -19,6 +19,7 @@ package com.beligum.blocks.imports.search;
 import com.beligum.blocks.config.RdfFactory;
 import com.beligum.blocks.endpoints.RdfEndpoint;
 import com.beligum.blocks.rdf.ifaces.RdfClass;
+import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.apache.shiro.authz.annotation.RequiresRoles;
 
 import javax.ws.rs.GET;
@@ -30,12 +31,12 @@ import java.io.IOException;
 import java.util.Set;
 
 import static gen.com.beligum.base.core.constants.base.core.ADMIN_ROLE_NAME;
+import static gen.com.beligum.blocks.core.constants.blocks.core.RDF_CLASS_LIST_PERMISSION;
 
 /**
  * Created by bram on 27/02/17.
  */
 @Path("/blocks/imports/search")
-@RequiresRoles(ADMIN_ROLE_NAME)
 public class Endpoint
 {
     //-----CONSTANTS-----
@@ -48,8 +49,10 @@ public class Endpoint
     @GET
     @Path("/classes/")
     @Produces(MediaType.APPLICATION_JSON)
+    @RequiresPermissions(RDF_CLASS_LIST_PERMISSION)
     public Response getClasses() throws IOException
     {
+        //this is basically the same as RdfEndpoint.getClasses(), but with the ALL_CLASSES added
         Set<RdfClass> retVal = RdfFactory.getLocalPublicClasses();
         retVal.add(RdfEndpoint.ALL_CLASSES);
         return Response.ok(retVal).build();
