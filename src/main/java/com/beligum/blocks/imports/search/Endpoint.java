@@ -30,8 +30,7 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Set;
 
-import static gen.com.beligum.base.core.constants.base.core.ADMIN_ROLE_NAME;
-import static gen.com.beligum.blocks.core.constants.blocks.core.RDF_CLASS_LIST_PERMISSION;
+import static gen.com.beligum.blocks.core.constants.blocks.core.RDF_CLASS_READ_ALL_PERM;
 
 /**
  * Created by bram on 27/02/17.
@@ -49,7 +48,7 @@ public class Endpoint
     @GET
     @Path("/classes/")
     @Produces(MediaType.APPLICATION_JSON)
-    @RequiresPermissions(RDF_CLASS_LIST_PERMISSION)
+    @RequiresPermissions(RDF_CLASS_READ_ALL_PERM)
     public Response getClasses() throws IOException
     {
         //this is basically the same as RdfEndpoint.getClasses(), but with the ALL_CLASSES added
