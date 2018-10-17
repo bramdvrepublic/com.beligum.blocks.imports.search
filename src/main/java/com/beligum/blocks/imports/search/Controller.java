@@ -34,7 +34,7 @@ import com.beligum.blocks.filesystem.index.ifaces.RdfTupleResult;
 import com.beligum.blocks.filesystem.index.results.AutoTupleRdfResult;
 import com.beligum.blocks.rdf.ifaces.RdfClass;
 import com.beligum.blocks.rdf.ifaces.RdfProperty;
-import com.beligum.blocks.rdf.ontology.factories.Terms;
+import com.beligum.blocks.rdf.ontology.vocabularies.local.factories.Terms;
 import com.beligum.blocks.templating.blocks.DefaultTemplateController;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.index.Term;
@@ -192,7 +192,7 @@ public class Controller extends DefaultTemplateController
             R.cacheManager().getRequestCache().put(SEARCH_REQUEST, new IndexSearchRequest());
         }
 
-        return (IndexSearchRequest) R.cacheManager().getRequestCache().get(SEARCH_REQUEST);
+        return R.cacheManager().getRequestCache().get(SEARCH_REQUEST);
     }
     /**
      * Note: the concept for the lazy loaded results is to postpone the use (the effective query) of the request object as long as possible
@@ -255,7 +255,7 @@ public class Controller extends DefaultTemplateController
             R.cacheManager().getRequestCache().put(SEARCH_RESULT, searchResult);
         }
 
-        return (IndexSearchResult) R.cacheManager().getRequestCache().get(SEARCH_RESULT);
+        return R.cacheManager().getRequestCache().get(SEARCH_RESULT);
     }
 
     //-----PROTECTED METHODS-----

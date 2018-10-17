@@ -61,7 +61,7 @@ public class ReverseController extends Controller
             R.cacheManager().getRequestCache().put(SEARCH_REVERSE_REQUEST, new IndexSearchRequest());
         }
 
-        return (IndexSearchRequest) R.cacheManager().getRequestCache().get(SEARCH_REVERSE_REQUEST);
+        return R.cacheManager().getRequestCache().get(SEARCH_REVERSE_REQUEST);
     }
     @Override
     public IndexSearchResult getSearchResult()
@@ -113,7 +113,7 @@ public class ReverseController extends Controller
             }
         }
 
-        return (IndexSearchResult) R.cacheManager().getRequestCache().get(SEARCH_REVERSE_RESULT);
+        return R.cacheManager().getRequestCache().get(SEARCH_REVERSE_RESULT);
     }
 
     //-----PROTECTED METHODS-----
