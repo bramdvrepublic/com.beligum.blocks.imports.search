@@ -13,15 +13,14 @@
 
 <template>
     <div class="panel panel-default panel-results">
+    ## Note: zero-based index
+        #set($firstIndex = ($CONTROLLER.searchResult.pageIndex * $CONTROLLER.searchResult.pageSize) + 1)
+        #set($lastIndex = ($CONTROLLER.searchResult.pageIndex * $CONTROLLER.searchResult.pageSize) + $CONTROLLER.searchResult.pageSize)
+        #if($CONTROLLER.searchResult.totalHits < $lastIndex)
+            #set($lastIndex = $CONTROLLER.searchResult.totalHits)
+        #end
         #if (!$CONTROLLER.searchRequest.hideHeader)
             <div class="panel-heading">
-            ## Note: zero-based index
-                #set($firstIndex = ($CONTROLLER.searchResult.pageIndex * $CONTROLLER.searchResult.pageSize) + 1)
-                #set($lastIndex = ($CONTROLLER.searchResult.pageIndex * $CONTROLLER.searchResult.pageSize) + $CONTROLLER.searchResult.pageSize)
-                #if($CONTROLLER.searchResult.totalHits < $lastIndex)
-                    #set($lastIndex = $CONTROLLER.searchResult.totalHits)
-                #end
-
                 #if(!$CONTROLLER.searchResult.empty)
                     #if($lastIndex > 0)
                         $TOOLKIT.display.message($MESSAGES.blocks.imports.search.boxResultsDescription, $firstIndex, $lastIndex)

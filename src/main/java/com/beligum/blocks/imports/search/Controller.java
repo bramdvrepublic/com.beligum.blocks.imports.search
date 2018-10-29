@@ -120,6 +120,9 @@ public class Controller extends DefaultTemplateController
             if (!StringUtils.isEmpty(descParam)) {
                 searchRequest.setSortDescending(Boolean.valueOf(descParam));
             }
+            else {
+                searchRequest.setSortDescending(false);
+            }
         }
 
         if (searchRequest.getPageIndex() == null) {
@@ -169,6 +172,9 @@ public class Controller extends DefaultTemplateController
             if (!StringUtils.isEmpty(resultsHideHeaderConfig)) {
                 searchRequest.setHideHeader(Boolean.parseBoolean(resultsHideHeaderConfig));
             }
+            else {
+                searchRequest.setHideHeader(false);
+            }
         }
 
         if (searchRequest.getHidePager() == null) {
@@ -176,8 +182,9 @@ public class Controller extends DefaultTemplateController
             if (!StringUtils.isEmpty(resultsHidePagerConfig)) {
                 searchRequest.setHidePager(Boolean.parseBoolean(resultsHidePagerConfig));
             }
-
-
+            else {
+                searchRequest.setHidePager(false);
+            }
         }
     }
 
