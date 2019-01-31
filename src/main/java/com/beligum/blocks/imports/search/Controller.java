@@ -42,6 +42,7 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.join.JoinUtil;
 import org.eclipse.rdf4j.query.TupleQueryResult;
 
 import java.io.IOException;

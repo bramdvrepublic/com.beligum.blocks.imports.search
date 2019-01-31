@@ -245,7 +245,7 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
             });
 
             //update the scrollbar
-            if (jQuery().perfectScrollbar) {
+            if ($.perfectScrollbar) {
                 listGroup.perfectScrollbar('update');
             }
 
