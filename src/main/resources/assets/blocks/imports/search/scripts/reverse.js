@@ -34,17 +34,6 @@ base.plugin("blocks.imports.SearchReverse", ["base.core.Class", "blocks.imports.
         },
 
         //-----IMPLEMENTED METHODS-----
-        init: function ()
-        {
-        },
-        focus: function (block, element, hotspot, event)
-        {
-            SearchReverse.Class.Super.prototype.focus.call(this);
-        },
-        blur: function (block, element)
-        {
-            SearchReverse.Class.Super.prototype.blur.call(this);
-        },
         getConfigs: function (block, element)
         {
             var retVal = SearchReverse.Class.Super.prototype.getConfigs.call(this, block, element);

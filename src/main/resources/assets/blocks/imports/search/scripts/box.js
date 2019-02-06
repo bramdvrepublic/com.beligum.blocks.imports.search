@@ -42,17 +42,6 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
         },
 
         //-----IMPLEMENTED METHODS-----
-        init: function ()
-        {
-        },
-        focus: function (block, element, hotspot, event)
-        {
-            SearchBox.Class.Super.prototype.focus.call(this);
-        },
-        blur: function (block, element)
-        {
-            SearchBox.Class.Super.prototype.blur.call(this);
-        },
         getConfigs: function (block, element)
         {
             var retVal = SearchBox.Class.Super.prototype.getConfigs.call(this, block, element);

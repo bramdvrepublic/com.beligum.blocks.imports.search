@@ -33,17 +33,6 @@ base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.
         },
 
         //-----IMPLEMENTED METHODS-----
-        init: function ()
-        {
-        },
-        focus: function (block, element, hotspot, event)
-        {
-            SearchResults.Class.Super.prototype.focus.call(this);
-        },
-        blur: function (block, element)
-        {
-            SearchResults.Class.Super.prototype.blur.call(this);
-        },
         getConfigs: function (block, element)
         {
             var retVal = SearchResults.Class.Super.prototype.getConfigs.call(this, block, element);
