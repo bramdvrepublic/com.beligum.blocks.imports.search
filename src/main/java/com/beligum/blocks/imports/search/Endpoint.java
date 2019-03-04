@@ -16,11 +16,10 @@
 
 package com.beligum.blocks.imports.search;
 
-import com.beligum.blocks.config.RdfFactory;
+import com.beligum.blocks.rdf.RdfFactory;
 import com.beligum.blocks.endpoints.RdfEndpoint;
 import com.beligum.blocks.rdf.ifaces.RdfClass;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
-import org.apache.shiro.authz.annotation.RequiresRoles;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
