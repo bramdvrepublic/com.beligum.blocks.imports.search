@@ -66,7 +66,7 @@ base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.
             var _this = this;
             var nameProperty = 'title';
             var valueProperty = 'curieName';
-            var searchClassCombo = this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.resultsSubjectTitle, SearchConstants.SEARCH_BOX_TYPE_ARG, SearchConstants.SEARCH_CLASSES_ENDPOINT, nameProperty, valueProperty,
+            var searchClassCombo = this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.resultsSubjectTitle, SearchConstants.SEARCH_BOX_TYPE_ARG, BlocksConstants.RDF_CLASSES_ENDPOINT, nameProperty, valueProperty,
                 function changeListener(oldValueTerm, newValueTerm)
                 {
                     //Call the change listener manually to reset the sub-property if the class changes,
@@ -111,6 +111,10 @@ base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.
                         {
                             Notification.error(BlocksMessages.generalServerDataError + (exception ? "; " + exception : ""), xhr);
                         });
+                },
+                {
+                    name: BlocksMessages.rdfClassAllTitle,
+                    value: ''
                 }
             );
 
