@@ -53,7 +53,7 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
             this.enableSortToggle = this.addOptionalClass(Sidebar, block.element, SearchMessages.boxSortToggleLabel, null, null, SearchConstants.SEARCH_BOX_SORT_ARG);
             this.addFilterCombo = this.createCombobox(Sidebar, SearchMessages.boxFiltersPropertiesAdd, []);
             this.activeFiltersList = this.createListGroup(SearchMessages.boxFiltersPropertiesActive, true, this.filtersListReordered);
-            this.searchClassCombo = this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.boxFiltersClassLabel, SearchConstants.SEARCH_BOX_TYPE_ARG, BlocksConstants.RDF_CLASSES_ENDPOINT, 'title', 'curieName',
+            this.searchClassCombo = this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.boxFiltersClassLabel, SearchConstants.SEARCH_BOX_TYPE_ARG, BlocksConstants.RDF_CLASSES_ENDPOINT, 'label', 'curieName',
                 function changeListener(oldValueTerm, newValueTerm)
                 {
                     //reset the filters if we explicitly changed the class to something else (so not during initialization)

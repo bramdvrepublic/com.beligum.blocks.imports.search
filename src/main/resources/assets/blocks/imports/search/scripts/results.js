@@ -64,7 +64,7 @@ base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.
             var sortPropCombo = this.addUniqueAttributeValue(Sidebar, block.element, SearchMessages.resultsSortSubjectTitle, sortPropComboAttr, [], null);
 
             var _this = this;
-            var nameProperty = 'title';
+            var nameProperty = 'label';
             var valueProperty = 'curieName';
             var searchClassCombo = this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.resultsSubjectTitle, SearchConstants.SEARCH_BOX_TYPE_ARG, BlocksConstants.RDF_CLASSES_ENDPOINT, nameProperty, valueProperty,
                 function changeListener(oldValueTerm, newValueTerm)
@@ -134,7 +134,7 @@ base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.
                 ]
             ));
 
-            //retVal.push(this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.resultsSubjectTitle, SearchConstants.SEARCH_BOX_TYPE_ARG, "/blocks/imports/search/values/", "title", "curieName"));
+            //retVal.push(this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.resultsSubjectTitle, SearchConstants.SEARCH_BOX_TYPE_ARG, "/blocks/imports/search/values/", "label", "curieName"));
 
             retVal.push(this.addUniqueAttributeValue(Sidebar, block.element, SearchMessages.boxResultsFormat, SearchConstants.SEARCH_RESULTS_FORMAT_ARG,
                 [
