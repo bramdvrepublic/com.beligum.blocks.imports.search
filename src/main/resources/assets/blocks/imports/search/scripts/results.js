@@ -65,8 +65,8 @@ base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.
 
             var _this = this;
             var nameProperty = 'label';
-            var valueProperty = 'curieName';
-            var searchClassCombo = this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.resultsSubjectTitle, SearchConstants.SEARCH_BOX_TYPE_ARG, BlocksConstants.RDF_CLASSES_ENDPOINT, nameProperty, valueProperty,
+            var valueProperty = 'curie';
+            var searchClassCombo = this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.resultsSubjectTitle, SearchConstants.SEARCH_BOX_TYPE_ARG, BlocksConstants.RDF_CLASSES_ENDPOINT, nameProperty, valueProperty, null,
                 function changeListener(oldValueTerm, newValueTerm)
                 {
                     //Call the change listener manually to reset the sub-property if the class changes,
@@ -86,8 +86,8 @@ base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.
 
                     //if we have a specific class, we'll only show the properties of that class,
                     //otherwise we show all properties
-                    if (newValueTerm && newValueTerm.curieName) {
-                        valuesEndpoint += "?" + BlocksConstants.RDF_RES_TYPE_CURIE_PARAM + "=" + newValueTerm.curieName;
+                    if (newValueTerm && newValueTerm.curie) {
+                        valuesEndpoint += "?" + BlocksConstants.RDF_RES_TYPE_CURIE_PARAM + "=" + newValueTerm.curie;
                     }
 
                     $.getJSON(valuesEndpoint)
@@ -134,7 +134,7 @@ base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.
                 ]
             ));
 
-            //retVal.push(this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.resultsSubjectTitle, SearchConstants.SEARCH_BOX_TYPE_ARG, "/blocks/imports/search/values/", "label", "curieName"));
+            //retVal.push(this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.resultsSubjectTitle, SearchConstants.SEARCH_BOX_TYPE_ARG, "/blocks/imports/search/values/", "label", "curie"));
 
             retVal.push(this.addUniqueAttributeValue(Sidebar, block.element, SearchMessages.boxResultsFormat, SearchConstants.SEARCH_RESULTS_FORMAT_ARG,
                 [

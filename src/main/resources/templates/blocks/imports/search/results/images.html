@@ -2,12 +2,12 @@
     #if(!$CONTROLLER.searchResult.empty)
         #foreach($result in $CONTROLLER.searchResult)
             <div class="col-md-4">
-                #set($escTitle=$TOOLKIT.esc.html($result.title))
+                #set($escTitle=$TOOLKIT.esc.html($result.label))
                 <a href="$result.id" title="$escTitle" class="thumbnail">
                 ##Note: we need the extra space after the URIs for correct fingerprinting
                     <img src="#if($result.image)$result.image #{else}/assets/blocks/imports/image/images/placeholder_image_1.png #{end}" alt="$escTitle"/>
                     <div class="caption">
-                        <span class="title">$result.title</span>
+                        <span class="title">$result.label</span>
                     </div>
                 </a>
             </div>

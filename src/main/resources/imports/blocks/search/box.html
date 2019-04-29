@@ -47,7 +47,7 @@
                                 ## This is the empty selection
                                     <option value=""></option>
                                     #foreach($entry in $searchConfig.getPossibleValuesFor($filter))
-                                        #set($htmlValue=$filter.curieName+'='+$entry.value)
+                                        #set($htmlValue=$filter.curie+'='+$entry.value)
                                         #set($selection='')
                                         #if ($REQUEST.uriInfo.queryParameters.get($CONSTANTS.blocks.imports.search.SEARCH_PARAM_FILTER).contains($htmlValue))
                                             #set($selection=' selected="selected"')
@@ -66,7 +66,7 @@
                             ## This is the empty selection
                                 <option value=""></option>
                                 #foreach($prop in $CONTROLLER.searchRequest.typeOf.properties)
-                                    #set($htmlValue=''+$prop.curieName)
+                                    #set($htmlValue=''+$prop.curie)
                                     #set($selection='')
                                     #if ($REQUEST.uriInfo.queryParameters.get($CONSTANTS.blocks.imports.search.SEARCH_PARAM_SORT).contains($htmlValue))
                                         #set($selection=' selected="selected"')

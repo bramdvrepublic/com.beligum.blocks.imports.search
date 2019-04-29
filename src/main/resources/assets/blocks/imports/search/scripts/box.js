@@ -53,11 +53,11 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
             this.enableSortToggle = this.addOptionalClass(Sidebar, block.element, SearchMessages.boxSortToggleLabel, null, null, SearchConstants.SEARCH_BOX_SORT_ARG);
             this.addFilterCombo = this.createCombobox(Sidebar, SearchMessages.boxFiltersPropertiesAdd, []);
             this.activeFiltersList = this.createListGroup(SearchMessages.boxFiltersPropertiesActive, true, this.filtersListReordered);
-            this.searchClassCombo = this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.boxFiltersClassLabel, SearchConstants.SEARCH_BOX_TYPE_ARG, BlocksConstants.RDF_CLASSES_ENDPOINT, 'label', 'curieName',
+            this.searchClassCombo = this.addUniqueAttributeValueAsync(Sidebar, block.element, SearchMessages.boxFiltersClassLabel, SearchConstants.SEARCH_BOX_TYPE_ARG, BlocksConstants.RDF_CLASSES_ENDPOINT, 'label', 'curie', null,
                 function changeListener(oldValueTerm, newValueTerm)
                 {
                     //reset the filters if we explicitly changed the class to something else (so not during initialization)
-                    if (oldValueTerm && oldValueTerm.curieName && newValueTerm && newValueTerm.curieName && newValueTerm.curieName !== oldValueTerm.curieName) {
+                    if (oldValueTerm && oldValueTerm.curie && newValueTerm && newValueTerm.curie && newValueTerm.curie !== oldValueTerm.curie) {
                         _this.resetActiveFilters();
                     }
 
@@ -117,14 +117,14 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
                         $.each(data, function (idx, entry)
                         {
                             var obj = {
-                                name: entry['title'],
+                                name: entry['label'],
                                 //note: null values aren't handled very well, force-switch to empty string
-                                value: entry['curieName'] === null ? '' : entry['curieName']
+                                value: entry['curie'] === null ? '' : entry['curie']
                             };
 
                             //search the array of objects for the first matching index
                             var idx = $.map(activeFilters, function(filter, idx) {
-                                if(filter && filter.curieName == obj.value) {
+                                if(filter && filter.curie == obj.value) {
                                     return idx;
                                 }
                             })[0];
@@ -281,7 +281,7 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
             {
                 //Note: the form of this object should match the one of com.beligum.blocks.imports.search.Controller.Filter
                 var obj = {
-                    curieName: $(this).attr(TEMP_FILTER_ATTR)
+                    curie: $(this).attr(TEMP_FILTER_ATTR)
                     //add additional config options here
                 };
 

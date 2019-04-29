@@ -5,7 +5,7 @@
         #set($letters={})
         #foreach($result in $CONTROLLER.searchResult.alphaSortedResults)
 
-            #set($letter=$result.title.substring(0,1).toUpperCase())
+            #set($letter=$result.label.substring(0,1).toUpperCase())
             #set($isLetter=$TOOLKIT.lang.character.isLetter($letter.charAt(0)))
             #if(!$isLetter)
                 #set($letter="#")
@@ -19,7 +19,7 @@
             #end
 
             <div class="col-md-4">
-                <a href="$result.id">$result.title</a>
+                <a href="$result.id">$result.label</a>
             </div>
 
         #end

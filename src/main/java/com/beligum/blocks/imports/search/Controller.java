@@ -199,7 +199,7 @@ public class Controller extends DefaultTemplateController
 //                searchRequest.filter(PageIndexEntry.parentId, PageIndexEntry.NULL_VALUE, IndexSearchRequest.FilterBoolean.AND);
 //
 //                if (searchRequest.getTypeOf() != null) {
-//                    searchRequest.filter(PageIndexEntry.typeOf, searchRequest.getTypeOf().getCurieName().toString(), IndexSearchRequest.FilterBoolean.AND);
+//                    searchRequest.filter(PageIndexEntry.typeOf, searchRequest.getTypeOf().getCurie().toString(), IndexSearchRequest.FilterBoolean.AND);
 //                }
 //
 //                if (searchRequest.getFieldFilters() != null) {
@@ -293,7 +293,7 @@ public class Controller extends DefaultTemplateController
 //                            // - numbers (with different precision)
 //                            // - string (constant or not)
 //                            // - URIs
-//                            String field = rdfProperty.getCurieName().toString();
+//                            String field = rdfProperty.getCurie().toString();
 //                            if (val instanceof Number) {
 //                                NumericRangeQuery q;
 //                                if (val instanceof Double) {
@@ -338,7 +338,7 @@ public class Controller extends DefaultTemplateController
 //                            //                                //TODO if you want to use this: make sure you rewrite the term query first (see else())
 //                            //                                if (includeNonExisting) {
 //                            //                                    //the following is the Lucene logic for: if you find a field, it should match x, but if you don't find such a field, include it as well
-//                            //                                    String fieldName = rdfProperty.getCurieName().toString();
+//                            //                                    String fieldName = rdfProperty.getCurie().toString();
 //                            //                                    org.apache.lucene.search.BooleanQuery subQuery = new org.apache.lucene.search.BooleanQuery();
 //                            //                                    subQuery.add(new TermQuery(new Term(fieldName, valStr)), BooleanClause.Occur.SHOULD);
 //                            //
@@ -361,7 +361,7 @@ public class Controller extends DefaultTemplateController
 //                            //                                    //
 //                            //                                    //                                        //TODO as long as we haven't re-indexed everything after 20/03/17 (to index strings as constants too), we have to use this for strings
 //                            //                                    //                                        //this is a text-indexed alternative to the (more exact) term query below
-//                            //                                    //                                        ComplexPhraseQueryParser queryParser = new ComplexPhraseQueryParser(key.getCurieName().toString(), LucenePageIndexer.DEFAULT_ANALYZER);
+//                            //                                    //                                        ComplexPhraseQueryParser queryParser = new ComplexPhraseQueryParser(key.getCurie().toString(), LucenePageIndexer.DEFAULT_ANALYZER);
 //                            //                                    //                                        queryParser.setInOrder(true);
 //                            //                                    //
 //                            //                                    //                                        String valStrEsc = LucenePageIndexer.removeEscapedChars(valStr, "");
@@ -369,7 +369,7 @@ public class Controller extends DefaultTemplateController
 //                            //                                    //                                        query.add(queryParser.parse("\"" + valStr + "\""), BooleanClause.Occur.FILTER);
 //                            //                                    //                                    }
 //                            //                                    //                                    else {
-//                            //                                    query.add(new TermQuery(new Term(rdfProperty.getCurieName().toString(), valStr)), BooleanClause.Occur.FILTER);
+//                            //                                    query.add(new TermQuery(new Term(rdfProperty.getCurie().toString(), valStr)), BooleanClause.Occur.FILTER);
 //                            //                                    //                                    }
 //                            //                                }
 //                            //
@@ -436,7 +436,7 @@ public class Controller extends DefaultTemplateController
 //            queryBuilder.append(" WHERE {\n");
 //
 //            //filter on class
-//            queryBuilder.append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" a <").append(type.getFullName().toString()).append("> . \n");
+//            queryBuilder.append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" a <").append(type.getUri().toString()).append("> . \n");
 //
 //            //if we're dealing with an external ontology property, we need a little bit more plumbing
 //            //Reasoning behind this is like so:
@@ -446,7 +446,7 @@ public class Controller extends DefaultTemplateController
 //            // - in the end, the result is bound to the same variable as an internal query
 //            if (resource) {
 //                //filter on property
-//                queryBuilder.append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getFullName().toString()).append("> ?").append(internalObjBinding)
+//                queryBuilder.append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getUri().toString()).append("> ?").append(internalObjBinding)
 //                            .append(" .\n");
 //
 //                //this is a array of ordered properties that are possible human-readable label candidates
@@ -459,9 +459,9 @@ public class Controller extends DefaultTemplateController
 //                //and selecting the right class of the external resource
 //                if (external) {
 //                    //bind the external resource
-//                    queryBuilder.append("\t").append("?").append(internalObjBinding).append(" <").append(Meta.sameAs.getFullName()).append("> ?").append(externalObjBinding).append(" .\n");
+//                    queryBuilder.append("\t").append("?").append(internalObjBinding).append(" <").append(Meta.sameAs.getUri()).append("> ?").append(externalObjBinding).append(" .\n");
 //                    //make sure the right external type is selected
-//                    queryBuilder.append("\t").append("?").append(externalObjBinding).append(" a <").append(endpoint.getExternalClasses(property.getDataType()).getFullName()).append(">")
+//                    queryBuilder.append("\t").append("?").append(externalObjBinding).append(" a <").append(endpoint.getExternalClasses(property.getDataType()).getUri()).append(">")
 //                                .append(" .\n");
 //                }
 //
@@ -481,12 +481,12 @@ public class Controller extends DefaultTemplateController
 //                    coalesceBuilderNolang.append("?").append(labelNameNolang);
 //
 //                    queryBuilder.append("\t").append("OPTIONAL {").append("\n");
-//                    queryBuilder.append("\t").append("\t").append("?").append(labelSubject).append(" <").append(labelProp.getFullName()).append("> ?").append(labelNameLang).append(" .\n");
+//                    queryBuilder.append("\t").append("\t").append("?").append(labelSubject).append(" <").append(labelProp.getUri()).append("> ?").append(labelNameLang).append(" .\n");
 //                    queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.LANG, language, labelNameLang));
 //                    queryBuilder.append("\t").append("}").append("\n");
 //
 //                    queryBuilder.append("\t").append("OPTIONAL {").append("\n");
-//                    queryBuilder.append("\t").append("\t").append("?").append(labelSubject).append(" <").append(labelProp.getFullName()).append("> ?").append(labelNameNolang).append(" .\n");
+//                    queryBuilder.append("\t").append("\t").append("?").append(labelSubject).append(" <").append(labelProp.getUri()).append("> ?").append(labelNameNolang).append(" .\n");
 //                    queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.NOLANG, language, labelNameNolang));
 //                    queryBuilder.append("\t").append("}").append("\n");
 //                }
@@ -509,12 +509,12 @@ public class Controller extends DefaultTemplateController
 //                String labelNameNolang = "1n";
 //
 //                queryBuilder.append("\t").append("OPTIONAL {").append("\n");
-//                queryBuilder.append("\t").append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getFullName()).append("> ?").append(labelNameLang).append(" .\n");
+//                queryBuilder.append("\t").append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getUri()).append("> ?").append(labelNameLang).append(" .\n");
 //                queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.LANG, language, labelNameLang));
 //                queryBuilder.append("\t").append("}").append("\n");
 //
 //                queryBuilder.append("\t").append("OPTIONAL {").append("\n");
-//                queryBuilder.append("\t").append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getFullName()).append("> ?").append(labelNameNolang).append(" .\n");
+//                queryBuilder.append("\t").append("\t").append("?").append(SPARQL_SUBJECT_BINDING_NAME).append(" <").append(property.getUri()).append("> ?").append(labelNameNolang).append(" .\n");
 //                queryBuilder.append("\t").append("\t").append(this.buildFilter(property, onlyLiteral, FilterLang.NOLANG, language, labelNameNolang));
 //                queryBuilder.append("\t").append("}").append("\n");
 //
@@ -642,7 +642,7 @@ public class Controller extends DefaultTemplateController
 //        public RdfTupleResult<String, String> getPossibleValuesFor(Filter filter) throws IOException
 //        {
 //            //TODO we might want to cache this value across requests
-//            return this.controller.searchAllFilterValues(this.controller.getSearchRequest().getTypeOf().getCurieName(), filter.getProperty().getCurieName(), false, true, 1000, this.language);
+//            return this.controller.searchAllFilterValues(this.controller.getSearchRequest().getTypeOf().getCurie(), filter.getProperty().getCurie(), false, true, 1000, this.language);
 //        }
 //    }
 //
@@ -652,7 +652,7 @@ public class Controller extends DefaultTemplateController
 //        /**
 //         * Note: the properties of this class should match the one in box.js - buildActiveFiltersValue()
 //         */
-//        private URI curieName;
+//        private URI curie;
 //
 //        //-----TRANSIENT VARIABLES-----
 //        private RdfProperty cachedProperty;
@@ -663,21 +663,21 @@ public class Controller extends DefaultTemplateController
 //        }
 //
 //        //-----PUBLIC GETTERS/SETTERS-----
-//        public URI getCurieName()
+//        public URI getCurie()
 //        {
-//            return curieName;
+//            return curie;
 //        }
 //        //Note: this will auto-box the string value to a URI
-//        public void setCurieName(URI curieName)
+//        public void setCurie(URI curie)
 //        {
-//            this.curieName = curieName;
+//            this.curie = curie;
 //        }
 //
 //        //-----PUBLIC METHODS-----
 //        public RdfProperty getProperty()
 //        {
 //            if (this.cachedProperty == null) {
-//                this.cachedProperty = RdfFactory.getProperty(this.curieName);
+//                this.cachedProperty = RdfFactory.getProperty(this.curie);
 //            }
 //
 //            return this.cachedProperty;
