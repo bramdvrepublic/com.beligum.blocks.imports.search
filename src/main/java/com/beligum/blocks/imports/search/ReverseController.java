@@ -36,16 +36,16 @@ public class ReverseController extends Controller
 //    @Override
 //    public IndexSearchRequest getSearchRequest()
 //    {
-//        if (!R.cacheManager().getRequestCache().containsKey(SEARCH_REVERSE_REQUEST)) {
-//            R.cacheManager().getRequestCache().put(SEARCH_REVERSE_REQUEST, new IndexSearchRequest());
+//        if (!R.requestManager().getCurrentRequest().getRequestCache().containsKey(SEARCH_REVERSE_REQUEST)) {
+//            R.requestManager().getCurrentRequest().getRequestCache().put(SEARCH_REVERSE_REQUEST, new IndexSearchRequest());
 //        }
 //
-//        return R.cacheManager().getRequestCache().get(SEARCH_REVERSE_REQUEST);
+//        return R.requestManager().getCurrentRequest().getRequestCache().get(SEARCH_REVERSE_REQUEST);
 //    }
 //    @Override
 //    public IndexSearchResult getSearchResult()
 //    {
-//        if (!R.cacheManager().getRequestCache().containsKey(SEARCH_REVERSE_RESULT)) {
+//        if (!R.requestManager().getCurrentRequest().getRequestCache().containsKey(SEARCH_REVERSE_RESULT)) {
 //            try {
 //                IndexSearchRequest searchRequest = this.getSearchRequest();
 //
@@ -71,7 +71,7 @@ public class ReverseController extends Controller
 //
 //                //first, look up the resource URI for the current page (because that's the one used in RDF-indexation)
 //                //note: this will return null on a newly created page
-//                PageIndexEntry indexedPage = pageIndexConnection.get(R.requestContext().getJaxRsRequest().getUriInfo().getRequestUri());
+//                PageIndexEntry indexedPage = pageIndexConnection.get(R.requestManager().getCurrentRequest().getRequestContext().getUriInfo().getRequestUri());
 //                if (indexedPage != null) {
 //                    org.apache.lucene.search.BooleanQuery pageQuery = new org.apache.lucene.search.BooleanQuery();
 //
@@ -85,14 +85,14 @@ public class ReverseController extends Controller
 //                    searchResult = StorageFactory.getJsonQueryConnection().search(pageQuery, null, false, searchRequest.getPageSize(), searchRequest.getPageIndex());
 //                }
 //
-//                R.cacheManager().getRequestCache().put(SEARCH_REVERSE_RESULT, searchResult);
+//                R.requestManager().getCurrentRequest().getRequestCache().put(SEARCH_REVERSE_RESULT, searchResult);
 //            }
 //            catch (Exception e) {
 //                Logger.error("Error while executing reverse search query", e);
 //            }
 //        }
 //
-//        return R.cacheManager().getRequestCache().get(SEARCH_REVERSE_RESULT);
+//        return R.requestManager().getCurrentRequest().getRequestCache().get(SEARCH_REVERSE_RESULT);
 //    }
 //
 //    //-----PROTECTED METHODS-----

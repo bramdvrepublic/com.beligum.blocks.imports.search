@@ -109,7 +109,7 @@ base.plugin("blocks.imports.SearchResults", ["base.core.Class", "blocks.imports.
                         })
                         .fail(function (xhr, textStatus, exception)
                         {
-                            Notification.error(BlocksMessages.generalServerDataError + (exception ? "; " + exception : ""), xhr);
+                            Notification.jsonError(BlocksMessages.generalServerDataError, xhr, textStatus, exception);
                         });
                 },
                 {

@@ -64,7 +64,7 @@ public class Controller extends DefaultTemplateController
 //        }
 //
 //        if (searchRequest.getFieldFilters() == null) {
-//            searchRequest.setFieldFilters(R.requestContext().getJaxRsRequest().getUriInfo().getQueryParameters().get(SEARCH_PARAM_FILTER));
+//            searchRequest.setFieldFilters(R.requestManager().getCurrentRequest().getRequestContext().getUriInfo().getQueryParameters().get(SEARCH_PARAM_FILTER));
 //        }
 //
 //        if (searchRequest.getSortField() == null) {
@@ -157,11 +157,11 @@ public class Controller extends DefaultTemplateController
 //    }
 //    public DefaultIndexSearchRequest getSearchRequest()
 //    {
-//        if (!R.cacheManager().getRequestCache().containsKey(SEARCH_REQUEST)) {
-//            R.cacheManager().getRequestCache().put(SEARCH_REQUEST, DefaultIndexSearchRequest.create());
+//        if (!R.requestManager().getCurrentRequest().getRequestCache().containsKey(SEARCH_REQUEST)) {
+//            R.requestManager().getCurrentRequest().getRequestCache().put(SEARCH_REQUEST, DefaultIndexSearchRequest.create());
 //        }
 //
-//        return R.cacheManager().getRequestCache().get(SEARCH_REQUEST);
+//        return R.requestManager().getCurrentRequest().getRequestCache().get(SEARCH_REQUEST);
 //    }
 //    /**
 //     * Note: the concept for the lazy loaded results is to postpone the use (the effective query) of the request object as long as possible
@@ -170,7 +170,7 @@ public class Controller extends DefaultTemplateController
 //     */
 //    public IndexSearchResult getSearchResult()
 //    {
-//        if (!R.cacheManager().getRequestCache().containsKey(SEARCH_RESULT)) {
+//        if (!R.requestManager().getCurrentRequest().getRequestCache().containsKey(SEARCH_RESULT)) {
 //
 //            //let's not return nulls, so we can always use .size() and so on
 //            IndexSearchResult searchResult = new SimpleIndexSearchResult(new ArrayList<>());
@@ -216,10 +216,10 @@ public class Controller extends DefaultTemplateController
 //                Logger.error("Error while executing search query", e);
 //            }
 //
-//            R.cacheManager().getRequestCache().put(SEARCH_RESULT, searchResult);
+//            R.requestManager().getCurrentRequest().getRequestCache().put(SEARCH_RESULT, searchResult);
 //        }
 //
-//        return R.cacheManager().getRequestCache().get(SEARCH_RESULT);
+//        return R.requestManager().getCurrentRequest().getRequestCache().get(SEARCH_RESULT);
 //    }
 //
 //    //-----PROTECTED METHODS-----
@@ -228,7 +228,7 @@ public class Controller extends DefaultTemplateController
 //        String retVal = null;
 //
 //        if (!StringUtils.isEmpty(name)) {
-//            List<String> query = R.requestContext().getJaxRsRequest().getUriInfo().getQueryParameters().get(name);
+//            List<String> query = R.requestManager().getCurrentRequest().getRequestContext().getUriInfo().getQueryParameters().get(name);
 //            if (query != null && query.size() > 0) {
 //                retVal = query.get(0).trim();
 //            }
@@ -238,7 +238,7 @@ public class Controller extends DefaultTemplateController
 //    }
 //    protected List<String> getQueryParams(String name)
 //    {
-//        List<String> retVal = R.requestContext().getJaxRsRequest().getUriInfo().getQueryParameters().get(name);
+//        List<String> retVal = R.requestManager().getCurrentRequest().getRequestContext().getUriInfo().getQueryParameters().get(name);
 //        return retVal == null ? new ArrayList<>() : retVal;
 //    }
 //    protected String getParam(String queryParam, String configParam, String defaultValue)
@@ -554,7 +554,7 @@ public class Controller extends DefaultTemplateController
 //                                            language);
 //
 //            //make sure the result iterator will get closed at the end of this request
-//            R.requestContext().registerClosable(retVal);
+//            R.requestManager().getCurrentRequest().registerClosable(retVal);
 //        }
 //
 //        return retVal;

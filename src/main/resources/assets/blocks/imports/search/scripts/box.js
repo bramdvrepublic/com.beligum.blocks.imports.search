@@ -170,7 +170,7 @@ base.plugin("blocks.imports.SearchBox", ["base.core.Class", "blocks.imports.Bloc
                     })
                     .fail(function (xhr, textStatus, exception)
                     {
-                        Notification.error(BlocksMessages.generalServerDataError + (exception ? "; " + exception : ""), xhr);
+                        Notification.jsonError(BlocksMessages.generalServerDataError, xhr, textStatus, exception);
                     });
             }
             else {
