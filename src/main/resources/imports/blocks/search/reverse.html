@@ -23,8 +23,8 @@
                 <ul>
                     #foreach($result in $CONTROLLER.searchResult)
                         <li>
-                            <a href="$result.id">
-                                $!result.getTitle()
+                            <a href="$result.uri">
+                                $!result.label
                             </a>
                         </li>
                     #end

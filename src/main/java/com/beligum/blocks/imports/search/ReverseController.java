@@ -16,87 +16,109 @@
 
 package com.beligum.blocks.imports.search;
 
+import com.beligum.base.cache.CacheFunction;
+import com.beligum.base.cache.CacheKey;
+import com.beligum.base.server.R;
+import com.beligum.blocks.config.StorageFactory;
+import com.beligum.blocks.index.entries.SimpleIndexSearchResult;
+import com.beligum.blocks.index.ifaces.*;
+import gen.com.beligum.blocks.imports.search.constants.blocks.imports.search;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.TermQuery;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Locale;
+
+import static gen.com.beligum.blocks.imports.search.constants.blocks.imports.search.SEARCH_RESULTS_FORMAT_LIST;
+
 /**
  * Created by wouter on 14/09/15.
  */
 public class ReverseController extends Controller
 {
-//    //-----CONSTANTS-----
-//    public enum CacheKeys implements CacheKey
-//    {
-//        SEARCH_REVERSE_REQUEST,
-//        SEARCH_REVERSE_RESULT,
-//    }
-//
-//    //-----VARIABLES-----
-//
-//    //-----CONSTRUCTORS-----
-//
-//    //-----PUBLIC METHODS-----
-//    @Override
-//    public IndexSearchRequest getSearchRequest()
-//    {
-//        if (!R.requestManager().getCurrentRequest().getRequestCache().containsKey(SEARCH_REVERSE_REQUEST)) {
-//            R.requestManager().getCurrentRequest().getRequestCache().put(SEARCH_REVERSE_REQUEST, new IndexSearchRequest());
-//        }
-//
-//        return R.requestManager().getCurrentRequest().getRequestCache().get(SEARCH_REVERSE_REQUEST);
-//    }
-//    @Override
-//    public IndexSearchResult getSearchResult()
-//    {
-//        if (!R.requestManager().getCurrentRequest().getRequestCache().containsKey(SEARCH_REVERSE_RESULT)) {
-//            try {
-//                IndexSearchRequest searchRequest = this.getSearchRequest();
-//
-//                //set some defaults if still empty..
-//                if (searchRequest.getSortDescending() == null) {
-//                    searchRequest.setSortDescending(false);
-//                }
-//                if (searchRequest.getPageIndex() == null) {
-//                    searchRequest.setPageIndex(FIRST_PAGE_INDEX);
-//                }
-//                if (searchRequest.getPageSize() == null) {
-//                    //use a larger default for the reverse search
-//                    searchRequest.setPageSize(MAX_PAGE_SIZE);
-//                }
-//                if (searchRequest.getFormat() == null) {
-//                    searchRequest.setFormat(SEARCH_RESULTS_FORMAT_LIST);
-//                }
-//
-//                PageIndexConnection pageIndexConnection = StorageFactory.getJsonIndexer().connect(null);
-//
-//                //let's not return nulls, so we can always use .size() and so on
-//                IndexSearchResult searchResult = new SimpleIndexSearchResult(new ArrayList<>());
-//
-//                //first, look up the resource URI for the current page (because that's the one used in RDF-indexation)
-//                //note: this will return null on a newly created page
-//                PageIndexEntry indexedPage = pageIndexConnection.get(R.requestManager().getCurrentRequest().getRequestContext().getUriInfo().getRequestUri());
-//                if (indexedPage != null) {
-//                    org.apache.lucene.search.BooleanQuery pageQuery = new org.apache.lucene.search.BooleanQuery();
-//
-//                    //Note: the URIs are indexed relatively (as opposed to the SPARQL endpoint)
-//                    pageQuery.add(new TermQuery(new Term(LucenePageIndexer.CUSTOM_FIELD_ALL_VERBATIM, indexedPage.getResource())), BooleanClause.Occur.FILTER);
-//
-//                    //makes sense not to return all languages this resource appears in (or we'll have a lot of doubles)
-//                    Locale locale = R.i18n().getOptimalLocale();
-//                    pageQuery.add(new TermQuery(new Term(PageIndexEntry.language.name(), locale.getLanguage())), BooleanClause.Occur.FILTER);
-//
-//                    searchResult = StorageFactory.getJsonQueryConnection().search(pageQuery, null, false, searchRequest.getPageSize(), searchRequest.getPageIndex());
-//                }
-//
-//                R.requestManager().getCurrentRequest().getRequestCache().put(SEARCH_REVERSE_RESULT, searchResult);
-//            }
-//            catch (Exception e) {
-//                Logger.error("Error while executing reverse search query", e);
-//            }
-//        }
-//
-//        return R.requestManager().getCurrentRequest().getRequestCache().get(SEARCH_REVERSE_RESULT);
-//    }
-//
-//    //-----PROTECTED METHODS-----
-//
-//    //-----PRIVATE METHODS-----
+    //-----CONSTANTS-----
+    public enum CacheKeys implements CacheKey
+    {
+        SEARCH_REVERSE_REQUEST,
+        SEARCH_REVERSE_RESULT,
+    }
+
+    //-----VARIABLES-----
+
+    //-----CONSTRUCTORS-----
+
+    //-----PUBLIC METHODS-----
+    @Override
+    public SearchRequestDAO getSearchRequest()
+    {
+        return R.requestManager().getCurrentRequest().getRequestCache().getAndInitIfAbsent(CacheKeys.SEARCH_REVERSE_REQUEST, new CacheFunction<CacheKey, SearchRequestDAO>()
+        {
+            @Override
+            public SearchRequestDAO apply(CacheKey cacheKey) throws IOException
+            {
+                return new SearchRequestDAO();
+            }
+        });
+    }
+    @Override
+    public IndexSearchResult getSearchResult()
+    {
+        return R.requestManager().getCurrentRequest().getRequestCache().getAndInitIfAbsent(CacheKeys.SEARCH_REVERSE_RESULT, new CacheFunction<CacheKey, IndexSearchResult>()
+        {
+            @Override
+            public IndexSearchResult apply(CacheKey cacheKey) throws IOException
+            {
+                SearchRequestDAO searchParams = ReverseController.this.getSearchRequest();
+
+                //set some defaults if still empty..
+                if (searchParams.getSortDescending() == null) {
+                    searchParams.setSortDescending(false);
+                }
+                if (searchParams.getPageIndex() == null) {
+                    searchParams.setPageIndex(FIRST_PAGE_INDEX);
+                }
+                if (searchParams.getPageSize() == null) {
+                    //use a larger default for the reverse search
+                    searchParams.setPageSize(Integer.parseInt(search.SEARCH_MAX_PAGE_SIZE));
+                }
+                if (searchParams.getFormat() == null) {
+                    searchParams.setFormat(SEARCH_RESULTS_FORMAT_LIST);
+                }
+
+                IndexConnection indexConnection = StorageFactory.getJsonIndexer().connect();
+
+                //let's not return nulls, so we can always use .size() and so on
+                IndexSearchResult retVal = new SimpleIndexSearchResult(new ArrayList<>());
+
+                //first, look up the resource URI for the current page (because that's the one used in RDF-indexation)
+                //note: this will return null on a newly created page
+                ResourceIndexEntry indexedPage = indexConnection.get(R.requestManager().getCurrentRequest().getRequestContext().getUriInfo().getRequestUri());
+                if (indexedPage != null) {
+
+                    IndexSearchRequest searchRequest = IndexSearchRequest.createFor(indexConnection);
+
+                    //Note: the URIs are indexed relatively (as opposed to the SPARQL endpoint)
+                    searchRequest.all(indexedPage.getResource(), IndexSearchRequest.FilterBoolean.AND);
+
+                    //makes sense not to return all languages this resource appears in (or we'll have a lot of doubles)
+                    searchRequest.language(ReverseController.this.getSearchLanguage());
+
+                    searchRequest.sort(searchParams.getSortField(), !searchParams.getSortDescending());
+                    searchRequest.pageSize(searchParams.getPageSize());
+                    searchRequest.pageOffset(searchParams.getPageIndex());
+
+                    retVal = indexConnection.search(searchRequest);
+                }
+
+                return retVal;
+            }
+        });
+    }
+
+    //-----PROTECTED METHODS-----
+
+    //-----PRIVATE METHODS-----
 
 }

@@ -3,7 +3,7 @@
         #foreach($result in $CONTROLLER.searchResult)
             <div class="col-md-4">
                 #set($escTitle=$TOOLKIT.esc.html($result.label))
-                <a href="$result.id" title="$escTitle" class="thumbnail">
+                <a href="$result.uri" title="$escTitle" class="thumbnail">
                 ##Note: we need the extra space after the URIs for correct fingerprinting
                     <img src="#if($result.image)$result.image #{else}/assets/blocks/imports/image/images/placeholder_image_1.png #{end}" alt="$escTitle"/>
                     <div class="caption">

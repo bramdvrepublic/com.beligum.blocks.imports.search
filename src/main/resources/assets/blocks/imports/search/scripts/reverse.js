@@ -78,8 +78,8 @@ base.plugin("blocks.imports.SearchReverse", ["base.core.Class", "blocks.imports.
                         value: 500
                     },
                     {
-                        name: 1000,
-                        value: 1000
+                        name: SearchConstants.SEARCH_MAX_PAGE_SIZE,
+                        value: SearchConstants.SEARCH_MAX_PAGE_SIZE
                     }
                 ], null));
 
