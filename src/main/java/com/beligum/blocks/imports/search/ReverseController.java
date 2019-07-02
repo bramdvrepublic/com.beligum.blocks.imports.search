@@ -100,7 +100,12 @@ public class ReverseController extends Controller
                     IndexSearchRequest searchRequest = IndexSearchRequest.createFor(indexConnection);
 
                     //Note: the URIs are indexed relatively (as opposed to the SPARQL endpoint)
+                    //Do a full  text search on everything
                     searchRequest.all(indexedPage.getResource(), IndexSearchRequest.FilterBoolean.AND);
+                    //only seach for non-sub objects and non-proxy objects
+                    searchRequest.filter(PageIndexEntry.resourceTypeField, PageIndexEntry.resourceTypeField.DEFAULT_VALUE, IndexSearchRequest.FilterBoolean.AND);
+                    //Exlude self
+                    searchRequest.filter(PageIndexEntry.resourceField, indexedPage.getResource(), IndexSearchRequest.FilterBoolean.NOT);
 
                     //makes sense not to return all languages this resource appears in (or we'll have a lot of doubles)
                     searchRequest.language(ReverseController.this.getSearchLanguage());
